@@ -20,7 +20,7 @@ _start:
 
 ##
 # Get system memory
-#	call get_mem
+	call get_mem
 ##
 
 # load unit pointer into SI
@@ -44,13 +44,21 @@ get_mem:
 	addw $0x400, %AX
 # CANNOT LOAD AX AND BX INTO AL BECAUSE BOTH ARE 2BYTE 
 	movb $0xE, %AH
-#	movb %AX, %AL
+#	movw %AX, %AL
+	#next line is just for testing
+	movw $0x6350, %AX
+	movb $0x64, %DL
+	div %DL
+	and $0x0, %AH
+	div %DL
+	addb $0x30, %AL
+	movb $0xE, %AH
 	int $0x10
 	movb $' ', %AL
 	int $0x10
 #	movb %BX, %AL
 	int $0x10
-
+	ret
 # Print_msg function print whatever SI pointed to with CX length
 print_msg:
 	lodsb
