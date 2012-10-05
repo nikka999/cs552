@@ -50,6 +50,8 @@ get_mem:
 # multiply BX by 64 to get total KB count
 	sall $6, %EBX
 	addl %EAX, %EBX
+# setup divisors on stack
+    push $0
 	and $0x0, %EDX
 	movl $0x186a0, %ECX
 	movl %EBX, %EAX
