@@ -51,6 +51,14 @@ get_mem:
 	sall $6, %EBX
 	addl %EAX, %EBX
 # setup divisors on stack
+	movw $0, %CX
+	push %CX
+	movw $10, %CX
+	push %CX
+	movw $100, %CX
+	push %CX
+	movw $1000, %CX
+	push %CX
 	and $0x0, %EDX
 	movl $0x186a0, %ECX
 	movl %EBX, %EAX
