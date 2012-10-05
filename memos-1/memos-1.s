@@ -49,14 +49,17 @@ get_mem:
 #	movl $4000, %EBX
 # multiply BX by 64 to get total KB count
 	sall $6, %EBX
-	addl $16384, %EBX
+	addl %EAX, %EBX
 	and $0x0, %EDX
 	movl $0x186a0, %ECX
 	movl %EBX, %EAX
 	divl %ECX
+	cmpb $0, %AL
+	je L1
 	addb $0x30, %AL
 	movb $0xE, %AH
 	int $0x10
+L1:
 	movl %EDX, %EAX
 	and $0x0, %EDX
 	movl $0x2710, %ECX
