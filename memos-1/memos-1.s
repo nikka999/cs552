@@ -110,24 +110,6 @@ print_msg:
 	int $0x10
 	jmp print_msg
 
-#print_mem:
-#	movw %AX, %BX
-#	movw $0x2710, %CX
-#	and $0x0, %DX
-#	div %CX
-#	add $0x30, %AL
-#	movb 0xE, %AH
-#	int $0x10
-#	movw %BX, %AX
-#	movw $0xa, %CX
-#	mul %CX
-#	movw $0x2710, %CX
-#	and $0x0, %DX
-#	div %CX
-#	add $0x30, %AL
-#	movb 0xE, %AH
-#	int $0x10
-#	jmp L1
 return:
 	ret
 
