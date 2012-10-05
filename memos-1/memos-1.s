@@ -17,12 +17,11 @@ _start:
 	leaw msg-0x1000, %SI
 	movw msg_len-0x1000, %CX
 	call print_msg
-
 ##
 # Get system memory
-	call get_mem
+	jmp get_mem
 ##
-
+L2:
 # load unit pointer into SI
 	leaw msg_unit-0x1000, %SI
 	movw msg_unit_len-0x1000, %CX
@@ -109,7 +108,8 @@ L1:
 	int $0x10
 #	movb %BX, %AL
 #	int $0x10
-	ret
+#	ret
+	jmp L2
 # Print_msg function print whatever SI pointed to with CX length
 print_msg:
 	lodsb
