@@ -51,6 +51,11 @@ get_mem:
 	addl %EAX, %EBX
 # setup divisors on stack
 	push $0
+	push $10
+	push $100
+	push $1000
+	push $10000
+	push $100000
 #	movw $0, %CX
 #	push %CX
 #	movw $10, %CX
@@ -59,7 +64,8 @@ get_mem:
 #	movw $1000, %CX
 #	push %CX
 	and $0x0, %EDX
-	movl $0x186a0, %ECX
+#	movl $0x186a0, %ECX
+	pop %ECX
 	movl %EBX, %EAX
 	divl %ECX
 	cmpb $0, %AL
@@ -70,28 +76,32 @@ get_mem:
 L1:
 	movl %EDX, %EAX
 	and $0x0, %EDX
-	movl $0x2710, %ECX
+#	movl $0x2710, %ECX
+	pop %ECX
 	divl %ECX
 	addb $0x30, %AL
 	movb $0xE, %AH
 	int $0x10
 	movl %EDX, %EAX
 	and $0x0, %EDX
-	movl $0x3e8, %ECX
+#	movl $0x3e8, %ECX
+	pop %ECX
 	divl %ECX
 	addb $0x30, %AL
 	movb $0xE, %AH
 	int $0x10
 	movl %EDX, %EAX
 	and $0x0, %EDX
-	movl $100, %ECX
+#	movl $100, %ECX
+	pop %ECX
 	divl %ECX
 	addb $0x30, %AL
 	movb $0xE, %AH
 	int $0x10
 	movl %EDX, %EAX
 	and $0x0, %EDX
-	movl $10, %ECX
+#	movl $10, %ECX
+	pop %ECX
 	divl %ECX
 	addb $0x30, %AL
 	movb $0xE, %AH
