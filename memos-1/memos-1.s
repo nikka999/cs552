@@ -46,34 +46,52 @@ get_mem:
 #	movb $0xE, %AH
 #	movw %AX, %AL
 	#next line is just for testing
-	movw $0xa410, %AX
-	movw %AX, %BX
-	movw $0x2710, %CX
-	and $0x0, %DX
-	div %CX
+#	movl $4000, %EBX
+# multiply BX by 64 to get total KB count
+	sall $6, %EBX
+	addl $16384, %EBX
+	and $0x0, %EDX
+	movl $0x186a0, %ECX
+	movl %EBX, %EAX
+	divl %ECX
 	addb $0x30, %AL
-	movb 0xE, %AH
+	movb $0xE, %AH
 	int $0x10
-#	movw %BX, %AX
-#	movw $0xa, %CX
-#	mul %CX
-#	movw $0x2710, %CX
-#	and $0x0, %DX
-#	div %CX
-#	add $0x30, %AL
-#	movb 0xE, %AH
-#	int $0x10
-#	jmp L1
-#	jmp print_mem
-#	and $0x0, %DX
-#	movb $0x64, %DL
-#	movw $0x2710, %CX
-#	div %CX
-#	and $0x0, %AH
-#	div %DL
-#	addb $0x30, %AL
-#	movb $0xE, %AH
-#	int $0x10
+	movl %EDX, %EAX
+	and $0x0, %EDX
+	movl $0x2710, %ECX
+	divl %ECX
+	addb $0x30, %AL
+	movb $0xE, %AH
+	int $0x10
+	movl %EDX, %EAX
+	and $0x0, %EDX
+	movl $0x3e8, %ECX
+	divl %ECX
+	addb $0x30, %AL
+	movb $0xE, %AH
+	int $0x10
+	movl %EDX, %EAX
+	and $0x0, %EDX
+	movl $100, %ECX
+	divl %ECX
+	addb $0x30, %AL
+	movb $0xE, %AH
+	int $0x10
+	movl %EDX, %EAX
+	and $0x0, %EDX
+	movl $10, %ECX
+	divl %ECX
+	addb $0x30, %AL
+	movb $0xE, %AH
+	int $0x10
+	movl %EDX, %EAX
+	and $0x0, %EDX
+#	movl $0x3e8, %ECX
+#	divl %ECX
+	addb $0x30, %AL
+	movb $0xE, %AH
+	int $0x10
 	movb $' ', %AL
 	movb $0xE, %AH
 	int $0x10
