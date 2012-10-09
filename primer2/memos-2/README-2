@@ -1,0 +1,51 @@
+Mao-Chi(Mike) Weng, Nikka Ghalili
+Fall 2012, CS552
+Primer 2
+2012/10/09
+
+** Please note: we follow STEP BY STEP on the tutorial by OSdev-Bare_bones. 
+**    We only modified the kernel.c file. 
+**    wiki.osdev.org/Bare_Bones
+
+After grub boot it up, loader.s takes over control from the Multiboot bootloader. And jumps to kernel proper. (OSDev)
+In our kernel.c, we simply poke the video memory directly to print our message. 
+
+====
+Taking the disk image from Part 1, we then need to install grub and put our kernel binary in to /boot/ folder. 
+
+1) Mount the image:
+	$ sudo mkdir /mnt/vdisk
+	$ sudo mount disk.img /mnt/vdisk -text2 -o loop,offset=32256
+
+2) install grub (We use grub-0.97-i386)
+	$ sudo mkdir /mnt/vdisk/boot
+	$ sudo mkdir /mnt/vdisk/boot/grub
+	$ sudo cp ~/grub-0.97/i386-redhat/{stage1,e2fs_stage1_5,stage2} /mnt/vdisk/boot/grub
+	
+	$ grub
+		[device (hd0) disk.img]
+		[geometry (hd0) 60 16 63]
+		[root (hd0,0)]
+		[setup (hd0)]
+		[quit]
+# Edit menu file (our kernel name is kernel.bin)
+	$ sudo touch /mnt/vdisk/boot/grub/menu.lst
+# Edit as:
+	title MemOS
+	root (hd0,0)
+	kernel /boot/kernel.bin
+
+	$ sudo umount /mnt/vdisk (OPTIONAL)
+3) start the image with qemu
+	$ qemu disk.img
+
+====
+
+Our kernel.bin file (produce with $ make all) is linked by kernel.o (produced by kernel.c) and loader.o (produced by loader.s)
+
+With no mistakes, running $ make all sould produce kernel.bin. And place it in the disk image by following the steps explained above. 
+And it sould produce a string of "Nikka & Mike" in the screen after entering MemOS. 
+ 
+	 
+
+

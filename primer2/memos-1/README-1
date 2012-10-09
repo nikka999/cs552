@@ -1,0 +1,79 @@
+Mao-Chi(Mike) Weng, Nikka Ghalili
+Fall 2012, CS552
+Primer 2
+2012/10/09
+
+*** Environment:
+	Host machine: Mac OSX 10.8 running Virtual Box with Ubuntu 10.04 (kernel: 2.6.32)
+
+*** Steps for us to create a disk image ***
+// We tried both dd and bximage to create disk image before, below shows only
+// the method using bximage. 
+** Note: this is exactly like the guidlines file provided with primer2. 
+1) 
+	$biximage
+	[hd]
+	[flat]
+	[30]
+	[disk.img]
+	
+2)
+	$fdisk disk.img
+	[x]
+	[h]
+	[16]
+	[s]
+	[63]
+	[c]
+	[60]
+	[r]
+	[n]
+	[p]
+	[1]
+	[t]
+	[83]
+	[a]
+	[l]
+	[w]
+	
+3)
+	$ sudo modprobe loop
+	$ sudo losetup -o 32256 /dev/loop0 disk.img
+	$ sudo mke2fs /dev/loop0
+	$ sudo losetup -d /dev/loop0
+
+4)
+	$ sudo modprobe ext2
+	$ sudo mkdir /mnt/vdisk
+	$ sudo mount disk.img /mnt/vdisk -text2 -o loop,offset=32256
+
+
+====
+
+With above 4 steps, we have a disk image with ext2 filesystem. 
+
+Our memos-1.s code utilize INT 0x10 interrupt to show the welcome message:
+	MemOS: Welcome *** System Memory is: XXX KB
+	// XXX denote amount of memory in decimal
+
+After make with $ make all, we have our binary program memos-1_test we can directly boot from qemu
+
+$ qemu memos-1_test (OPTIONAL: -m YY)
+// YY denotes the amout of memory in MB
+
+====
+
+To write our memos-1_test binary into the virtual disk's MBR is simple:
+
+	$ dd if=memos-1_test of=disk.img bs=440 count=1 conv=notrunc
+
+And now we can boot from the virtual disk. 
+	
+	$ qemu disk.img (OPTIONAL: -m YY)
+	// YY denotes the amount of memory in MB
+
+This should produce the following message:
+	MemOS: Welcome *** System Memory is: 16384 KB
+	// with command: qemu disk.img -m 16
+
+
