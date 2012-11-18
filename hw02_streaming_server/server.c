@@ -4,6 +4,50 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include "server.h"
+
+
+
+int init_cb(circular_buffer *cb, size_t sz) {
+	cb->buffer = (char *) malloc(MAXSLOTS * sz);
+	if (cb->buffer == NULL)
+		return NO_MEMORY;
+	cb->capacity = MAXSLOTS;
+	cb->count = 0;
+	cb->sz = sz;
+	cb->buffer_end = (char *)cb->buffer + (MAXSLOTS * sz);
+	cb->head = cb->buffer;
+	cb->tail = cb->buffer;
+	return SUCCESS;
+}
+
+int cb_push(circular_buffer *cb, const char *input) {
+	if (cb->count == cb->capacity)
+		return BUFFER_FULL;
+	memcpy((void *)cb->head, (const void *)input, cb->sz);
+	cb->head = cb->head + cb->sz;
+	if (cb->head == cb->buffer_end)
+        cb->head = cb->buffer;
+    cb->count++;
+	return SUCCESS;
+}
+
+int cb_pop(circular_buffer *cb, const char *output) {
+	if (cb->count == 0)
+		return BUFFER_EMPTY;
+	memcpy((void *)output, (void *)cb->tail, cb->sz);
+	cb->tail = cb->tail + cb->sz;
+    if (cb->tail == cb->buffer_end)
+        cb->tail = cb->buffer;
+    cb->count--;
+	return SUCCESS;
+}
+
+void free_cb(circular_buffer *cb) {
+	free(cb->buffer);
+}
+
+
 
 void servConn (int port) {
 
