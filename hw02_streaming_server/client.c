@@ -36,7 +36,7 @@ int cliConn (char *host, int port) {
 
 int main () {
 
-  int sd = cliConn ("blackadder", 5050);
+  int sd = cliConn ("localhost", 5050);
   
   write (sd, "Hello, World!", 14);
   
