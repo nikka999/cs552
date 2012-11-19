@@ -18,6 +18,10 @@ enum Errors {
 	BUFFER_EMPTY,
 };
 
+typedef struct{
+	int port;
+	int workers;
+} Params;
 
 void servConn (int port);
 int init_cb(circular_buffer *cb, size_t sz);

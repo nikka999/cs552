@@ -5,24 +5,52 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "server.h"
 
-struct Params {
-	int port;
-	int workers;
-} params;
+Params params;
+
+void print_help(void) {
+	printf("usage:	-h : print help message\n"
+			"	-p : specify port number\n"
+			"	-w : specify number of workers\n");	
+}
 
 int parse_args(int argc, char const **argv, Params *p) {
 	int count = 1;
+//initialize port and workers to default, incase user does not specify one or both of them.
+	p->port = 5050;
+	p->workers = 10;
+
 	if (argc == 1) {
-		printf("You have not specified any parameters. So we will run using default params.");
-		printf("Usage:  -h : print help message
-						-p : specify port number
-						-w : specify number of workers");
+		printf("You have not specified any parameters. So we will run using default params.\n");
+		print_help();
 	}
-	while (count < argc) {
-		if (!strcmp(argv[count], "-h"))
+	else {
+		while (count < argc) {
+			if (!strcmp(argv[count], "-h")) {
+				print_help();
+				return 1;			
+			}
+			else if (!strcmp(argv[count], "-p")) {
+				count++;
+				p->port = atoi(argv[count]);
+				count++;
+			}
+			else if (!strcmp(argv[count], "-w")) {
+				count++;
+				p->workers = atoi(argv[count]);
+				count++;
+			}
+			else {
+				printf("unkown parameter: %s\n", argv[count]);
+				return 1;
+			}
+		}		
 	}
+	printf("Server started. Port: %d, Number of Workers: %d\n", p->port, p->workers);
+	return 0;
 }
 
 
@@ -122,6 +150,11 @@ void servConn (int port) {
 
 int main (int argc, char const *argv[])
 {
-  	servConn (5050);		/* Server port. */
+	int rc;
+
+	rc = parse_args(argc, argv, &params);
+	if (rc)
+		exit(0);
+	servConn (params.port);		/* Server port. */
 	return 0;
 }
