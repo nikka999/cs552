@@ -4,8 +4,26 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <string.h>
 #include "server.h"
 
+struct Params {
+	int port;
+	int workers;
+} params;
+
+int parse_args(int argc, char const **argv, Params *p) {
+	int count = 1;
+	if (argc == 1) {
+		printf("You have not specified any parameters. So we will run using default params.");
+		printf("Usage:  -h : print help message
+						-p : specify port number
+						-w : specify number of workers");
+	}
+	while (count < argc) {
+		if (!strcmp(argv[count], "-h"))
+	}
+}
 
 
 int init_cb(circular_buffer *cb, size_t sz) {
@@ -47,6 +65,9 @@ void free_cb(circular_buffer *cb) {
 	free(cb->buffer);
 }
 
+int cb_count(circular_buffer *cb) {
+	return cb->count;
+}
 
 
 void servConn (int port) {
@@ -99,9 +120,8 @@ void servConn (int port) {
 }
 
 
-int main () {
-  
-  servConn (5050);		/* Server port. */
-
-  return 0;
+int main (int argc, char const *argv[])
+{
+  	servConn (5050);		/* Server port. */
+	return 0;
 }

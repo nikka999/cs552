@@ -24,3 +24,5 @@ int init_cb(circular_buffer *cb, size_t sz);
 int cb_push(circular_buffer *cb, const char *input);
 int cb_pop(circular_buffer *cb, const char *output);
 void free_cb(circular_buffer *cb);
+int cb_count(circular_buffer *cb);
+int parse_args(int argc, char const **argv, Params *p);
