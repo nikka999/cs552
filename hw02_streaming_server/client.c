@@ -7,39 +7,37 @@
 
 int cliConn (char *host, int port) {
  
-  struct sockaddr_in name;
-  struct hostent *hent;
-  int sd;
+    struct sockaddr_in name;
+    struct hostent *hent;
+    int sd;
  
-  if ((sd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-    perror("(cliConn): socket() error");
-    exit (-1);
-  }
+    if ((sd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("(cliConn): socket() error");
+        exit (-1);
+    }
  
-  if ((hent = gethostbyname (host)) == NULL)
-    fprintf (stderr, "Host %s not found.\n", host);
-  else
-    bcopy (hent->h_addr, &name.sin_addr, hent->h_length);
+    if ((hent = gethostbyname (host)) == NULL)
+        fprintf (stderr, "Host %s not found.\n", host);
+    else
+        bcopy (hent->h_addr, &name.sin_addr, hent->h_length);
  
-  name.sin_family = AF_INET;
-  name.sin_port = htons (port);
+    name.sin_family = AF_INET;
+    name.sin_port = htons (port);
  
-  /* connect port */
-  if (connect (sd, (struct sockaddr *)&name, sizeof(name)) < 0) {
-    perror("(cliConn): connect() error");
-    exit (-1);
-  }
+    /* connect port */
+    if (connect (sd, (struct sockaddr *)&name, sizeof(name)) < 0) {
+        perror("(cliConn): connect() error");
+        exit (-1);
+    }
  
-  return (sd);
+    return (sd);
 }
 
 
 int main () {
 
-  int sd = cliConn ("blackadder", 5050);
-  
-  write (sd, "Hello, World!", 14);
-  
-  return 0;
+    int sd = cliConn ("blackadder", 5050);
+    write (sd, "Hello, World!", 14);
+    return 0;
 }
 
