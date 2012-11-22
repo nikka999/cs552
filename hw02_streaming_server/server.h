@@ -30,3 +30,4 @@ int cb_pop(circular_buffer *cb, const char *output);
 void free_cb(circular_buffer *cb);
 int cb_count(circular_buffer *cb);
 int parse_args(int argc, char const **argv, Params *p);
+void *do_work(void *thread_id);

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "server.h"
 
 Params params;
@@ -53,7 +54,10 @@ int parse_args(int argc, char const **argv, Params *p) {
 	return 0;
 }
 
-
+void *do_work(void *thread_id) {
+	int tid = (int)thread_id;
+	//worker threads
+}
 int init_cb(circular_buffer *cb, size_t sz) {
 	cb->buffer = (char *) malloc(MAXSLOTS * sz);
 	if (cb->buffer == NULL)
@@ -100,51 +104,60 @@ int cb_count(circular_buffer *cb) {
 
 void servConn (int port) {
 
-  int sd, new_sd;
-  struct sockaddr_in name, cli_name;
-  int sock_opt_val = 1;
-  int cli_len;
-  char data[80];		/* Our receive data buffer. */
+  	int sd, new_sd;
+  	struct sockaddr_in name, cli_name;
+  	int sock_opt_val = 1;
+  	int cli_len;
+  	char data[80];		/* Our receive data buffer. */
+  	pthread_t threads[params.workers];
+	int i, rc;
+	// Create Worker Pool
+	for (i = 0; i < params.workers; i++) {
+		rc = pthread_create(&threads[i], NULL, do_work, (void *)i);
+		if (rc) {
+			printf("ERROR; return code from pthread_create() is %d\n", rc);
+			exit(-1);
+		}	
+	}
+  	if ((sd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+    	perror("(servConn): socket() error");
+    	exit (-1);
+  	}
+
+  	if (setsockopt (sd, SOL_SOCKET, SO_REUSEADDR, (char *) &sock_opt_val,
+		  	sizeof(sock_opt_val)) < 0) {
+    	perror ("(servConn): Failed to set SO_REUSEADDR on INET socket");
+    	exit (-1);
+  	}
+
+  	name.sin_family = AF_INET;
+  	name.sin_port = htons (port);
+  	name.sin_addr.s_addr = htonl(INADDR_ANY);
   
-  if ((sd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-    perror("(servConn): socket() error");
-    exit (-1);
-  }
+  	if (bind (sd, (struct sockaddr *)&name, sizeof(name)) < 0) {
+    	perror ("(servConn): bind() error");
+    	exit (-1);
+  	}
 
-  if (setsockopt (sd, SOL_SOCKET, SO_REUSEADDR, (char *) &sock_opt_val,
-		  sizeof(sock_opt_val)) < 0) {
-    perror ("(servConn): Failed to set SO_REUSEADDR on INET socket");
-    exit (-1);
-  }
+  	listen (sd, 5);
 
-  name.sin_family = AF_INET;
-  name.sin_port = htons (port);
-  name.sin_addr.s_addr = htonl(INADDR_ANY);
-  
-  if (bind (sd, (struct sockaddr *)&name, sizeof(name)) < 0) {
-    perror ("(servConn): bind() error");
-    exit (-1);
-  }
-
-  listen (sd, 5);
-
-  for (;;) {
-      cli_len = sizeof (cli_name);
-      new_sd = accept (sd, (struct sockaddr *) &cli_name, &cli_len);
-      printf ("Assigning new socket descriptor:  %d\n", new_sd);
+  	for (;;) {
+      	cli_len = sizeof (cli_name);
+      	new_sd = accept (sd, (struct sockaddr *) &cli_name, &cli_len);
+      	printf ("Assigning new socket descriptor:  %d\n", new_sd);
       
-      if (new_sd < 0) {
-	perror ("(servConn): accept() error");
-	exit (-1);
-      }
+      	if (new_sd < 0) {
+			perror ("(servConn): accept() error");
+			exit (-1);
+      	}
 
-      if (fork () == 0) {	/* Child process. */
-	close (sd);
-	read (new_sd, &data, 14); /* Read our string: "Hello, World!" */
-	printf ("Received string = %s\n", data);
-	exit (0);
-      }
-  }
+      	if (fork () == 0) {	/* Child process. */
+			close (sd);
+			read (new_sd, &data, 14); /* Read our string: "Hello, World!" */
+			printf ("Received string = %s\n", data);
+			exit (0);
+      	}
+  	}
 }
 
 
