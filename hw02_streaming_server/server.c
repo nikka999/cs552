@@ -69,6 +69,7 @@ void *do_work(void *thread_id) {
 	GloSocket = 0;
 	pthread_mutex_unlock(&conn_mutex);
 	// while (1) {
+		// write protocol, first send buffer size through port, then send string itself
 		read (sd, &data, 14);
 		printf ("Received string = %s, in thread %d\n", data, tid);
 	// }
