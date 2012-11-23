@@ -11,6 +11,9 @@
 #include "server.h"
 
 Params params;
+int GloSocket = 0;
+pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
 
 void print_help(void) {
 	printf("usage:	-h : print help message\n"
@@ -56,7 +59,19 @@ int parse_args(int argc, char const **argv, Params *p) {
 
 void *do_work(void *thread_id) {
 	int tid = (int)thread_id;
-	//worker threads
+	int sd;
+	char data[80];		/* Our receive data buffer. */  	
+	pthread_mutex_lock(&conn_mutex);
+	while (!GloSocket) {
+		pthread_cond_wait(&conn_cond, &conn_mutex);
+	}
+	sd = GloSocket;
+	GloSocket = 0;
+	pthread_mutex_unlock(&conn_mutex);
+	// while (1) {
+		read (sd, &data, 14);
+		printf ("Received string = %s, in thread %d\n", data, tid);
+	// }
 }
 int init_cb(circular_buffer *cb, size_t sz) {
 	cb->buffer = (char *) malloc(MAXSLOTS * sz);
@@ -108,7 +123,7 @@ void servConn (int port) {
   	struct sockaddr_in name, cli_name;
   	int sock_opt_val = 1;
   	int cli_len;
-  	char data[80];		/* Our receive data buffer. */
+  	// char data[80];		/* Our receive data buffer. */
   	pthread_t threads[params.workers];
 	int i, rc;
 	// Create Worker Pool
@@ -150,13 +165,19 @@ void servConn (int port) {
 			perror ("(servConn): accept() error");
 			exit (-1);
       	}
-
-      	if (fork () == 0) {	/* Child process. */
-			close (sd);
-			read (new_sd, &data, 14); /* Read our string: "Hello, World!" */
-			printf ("Received string = %s\n", data);
-			exit (0);
-      	}
+		
+		pthread_mutex_lock(&conn_mutex);
+		GloSocket = new_sd;
+		pthread_cond_signal(&conn_cond);
+		pthread_mutex_unlock(&conn_mutex);
+		
+			//       	if (fork () == 0) {	/* Child process. */
+			// close (sd);
+			// read (new_sd, &data, 14); /* Read our string: "Hello, World!" */
+			// printf ("Received string = %s\n", data);
+			// exit (0);
+			//       	}
+			
   	}
 }
 
@@ -164,7 +185,7 @@ void servConn (int port) {
 int main (int argc, char const *argv[])
 {
 	int rc;
-
+	
 	rc = parse_args(argc, argv, &params);
 	if (rc)
 		exit(0);
