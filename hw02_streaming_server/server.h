@@ -32,9 +32,11 @@ typedef struct{
 
 void servConn (int port);
 int init_cb(circular_buffer *cb, size_t sz);
-int cb_push(circular_buffer *cb, const char *input);
-int cb_pop(circular_buffer *cb, const char *output);
+int cb_push(circular_buffer *cb, const void *input);
+int cb_pop(circular_buffer *cb, const void *output);
 void free_cb(circular_buffer *cb);
 int cb_count(circular_buffer *cb);
 int parse_args(int argc, char const **argv, Params *p);
 void *do_work(void *thread_id);
+void *dispatcher(void *thread_id);
+void intHandler(int sig);

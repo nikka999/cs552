@@ -8,12 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <signal.h>
 #include "server.h"
 
 Params params;
 int GloSocket = 0;
 circular_buffer GloBuff;
 pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t buff_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
 
 void print_help(void) {
@@ -63,6 +65,7 @@ void *do_work(void *thread_id) {
 	int sd, rc;
 	size_t buf_size = 0;
 	char *data;		/* Our receive data buffer. */ 
+	worker_message wm;
 	while (1) {
 		pthread_mutex_lock(&conn_mutex);
 		while (!GloSocket) {
@@ -79,13 +82,29 @@ void *do_work(void *thread_id) {
 			if (rc != buf_size)
 				printf("rc not right: %d\n", rc);
 			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
+			wm.thread_id = tid;
+			wm.fd = sd;
+			wm.message = data;
+			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+			free(data);			
 		}
 		printf("Client Disconnected\n");
 		//close sd might not be good idea since old sd can be reused...
 		close(sd);
-		free(data);
 	} 	
 }
+
+void *dispatcher(void *thread_id){
+	worker_message wm;
+	char msg[40];
+	int size = 0;
+	while(1) {
+		while(cb_pop(&GloBuff, &wm) == BUFFER_EMPTY);
+		sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
+		printf("dispatcher: msg is %s\n", msg);		
+	}
+}
+
 int init_cb(circular_buffer *cb, size_t sz) {
 	cb->buffer = (char *) malloc(MAXSLOTS * sz);
 	if (cb->buffer == NULL)
@@ -99,25 +118,33 @@ int init_cb(circular_buffer *cb, size_t sz) {
 	return SUCCESS;
 }
 
-int cb_push(circular_buffer *cb, const char *input) {
-	if (cb->count == cb->capacity)
+int cb_push(circular_buffer *cb, const void *input) {
+	pthread_mutex_lock(&buff_mutex);	
+	if (cb->count == cb->capacity){
+		pthread_mutex_unlock(&buff_mutex);	
 		return BUFFER_FULL;
-	memcpy((void *)cb->head, (const void *)input, cb->sz);
+	}
+	memcpy((void *)cb->head, input, cb->sz);
 	cb->head = cb->head + cb->sz;
 	if (cb->head == cb->buffer_end)
         cb->head = cb->buffer;
     cb->count++;
+	pthread_mutex_unlock(&buff_mutex);	
 	return SUCCESS;
 }
 
-int cb_pop(circular_buffer *cb, const char *output) {
-	if (cb->count == 0)
+int cb_pop(circular_buffer *cb, const void *output) {
+	pthread_mutex_lock(&buff_mutex);	
+	if (cb->count == 0) {
+		pthread_mutex_unlock(&buff_mutex);	
 		return BUFFER_EMPTY;
+	}
 	memcpy((void *)output, (void *)cb->tail, cb->sz);
 	cb->tail = cb->tail + cb->sz;
     if (cb->tail == cb->buffer_end)
         cb->tail = cb->buffer;
     cb->count--;
+	pthread_mutex_unlock(&buff_mutex);
 	return SUCCESS;
 }
 
@@ -126,7 +153,9 @@ void free_cb(circular_buffer *cb) {
 }
 
 int cb_count(circular_buffer *cb) {
+	pthread_mutex_lock(&buff_mutex);		
 	return cb->count;
+	pthread_mutex_unlock(&buff_mutex);		
 }
 
 
@@ -136,8 +165,7 @@ void servConn (int port) {
   	struct sockaddr_in name, cli_name;
   	int sock_opt_val = 1;
   	int cli_len;
-  	// char data[80];		/* Our receive data buffer. */
-  	pthread_t threads[params.workers];
+  	pthread_t threads[params.workers], disp;
 	int i, rc;
 	// Create Worker Pool
 	for (i = 0; i < params.workers; i++) {
@@ -146,6 +174,11 @@ void servConn (int port) {
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
 			exit(-1);
 		}	
+	}
+	rc = pthread_create(&disp, NULL, dispatcher, (void *)i+1);
+	if (rc) {
+		printf("ERROR; return code from pthread_create() is %d\n", rc);
+		exit(-1);
 	}
   	if ((sd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
     	perror("(servConn): socket() error");
@@ -186,6 +219,10 @@ void servConn (int port) {
   	}
 }
 
+void intHandler(int sig) {
+	free_cb(&GloBuff);
+	exit(0);
+}
 
 int main (int argc, char const *argv[])
 {
@@ -193,6 +230,8 @@ int main (int argc, char const *argv[])
 	rc = parse_args(argc, argv, &params);
 	if (rc) exit(0);		
 	rc = init_cb(&GloBuff, sizeof(worker_message));
+	signal(SIGINT, intHandler);
+   	signal(SIGKILL, intHandler);
 	if (rc) exit(-1);
 	servConn (params.port);		/* Server port. */
 	return 0;
