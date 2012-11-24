@@ -97,11 +97,14 @@ void *do_work(void *thread_id) {
 void *dispatcher(void *thread_id){
 	worker_message wm;
 	char msg[40];
-	int size = 0;
+	size_t size = 0;
 	while(1) {
 		while(cb_pop(&GloBuff, &wm) == BUFFER_EMPTY);
 		sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
-		printf("dispatcher: msg is %s\n", msg);		
+		printf("dispatcher: msg is %s\n", msg);
+		size = strlen(msg);
+		write(wm.fd, &size, sizeof(size_t));
+		write(wm.fd, msg, strlen(msg));		
 	}
 }
 

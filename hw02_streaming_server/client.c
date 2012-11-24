@@ -38,18 +38,23 @@ int cliConn (char *host, int port) {
 
 int main (int argc, char const *argv[])
 {
-	size_t len;
+	size_t len, data_len;
 	char buffer[20];
 	char *msg = "Just doing some random tests...";
+	char *data;
   	int sd = cliConn ("localhost", 5050);
 	len = strlen(msg);
 	len = htonl(len);
 	while(1) {
 		while(fgets(buffer, 20, stdin)) {
 			if (!strcmp(buffer, "s\n")) {
-				write (sd, &len, sizeof(size_t));
+				write(sd, &len, sizeof(size_t));
 				printf("the msg is: %s\n", msg);
-				write (sd, msg, strlen(msg));			
+				write(sd, msg, strlen(msg));
+				read(sd, &data_len, sizeof(size_t));
+				data = (char *)malloc(data_len);
+				read(sd, data, data_len);
+				printf("data is: %s\n",data);			
 			}
 			else if(!strcmp(buffer, "q\n")) {
 				close(sd);
