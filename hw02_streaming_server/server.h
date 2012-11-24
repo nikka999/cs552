@@ -11,6 +11,13 @@ typedef struct circular_buffer
     char *tail;       // pointer to tail
 } circular_buffer;
 
+typedef struct worker_message
+{
+	int thread_id; // worker thread ID
+	int fd; // Client Socket ID
+	char *message; //Client Message
+} worker_message;
+
 enum Errors {
 	SUCCESS,
 	NO_MEMORY,

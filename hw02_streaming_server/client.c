@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <string.h>
+#include <stdlib.h>
 
 int cliConn (char *host, int port) {
  
@@ -36,10 +38,15 @@ int cliConn (char *host, int port) {
 
 int main () {
 
-  int sd = cliConn ("localhost", 5050);
-  
-  write (sd, "Hello, World!", 14);
-  
-  return 0;
+	size_t len;
+	char *msg = "Just doing some random tests...";
+  	int sd = cliConn ("localhost", 5050);
+	len = strlen(msg);
+	len = htonl(len);
+	write (sd, &len, sizeof(size_t));
+	printf("the msg is: %s\n", msg);
+	write (sd, msg, strlen(msg));
+	close(sd);
+  	return 0;
 }
 

@@ -12,6 +12,7 @@
 
 Params params;
 int GloSocket = 0;
+circular_buffer GloBuff;
 pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
 
@@ -59,20 +60,31 @@ int parse_args(int argc, char const **argv, Params *p) {
 
 void *do_work(void *thread_id) {
 	int tid = (int)thread_id;
-	int sd;
-	char data[80];		/* Our receive data buffer. */  	
-	pthread_mutex_lock(&conn_mutex);
-	while (!GloSocket) {
-		pthread_cond_wait(&conn_cond, &conn_mutex);
-	}
-	sd = GloSocket;
-	GloSocket = 0;
-	pthread_mutex_unlock(&conn_mutex);
-	// while (1) {
-		// write protocol, first send buffer size through port, then send string itself
-		read (sd, &data, 14);
-		printf ("Received string = %s, in thread %d\n", data, tid);
-	// }
+	int sd, rc;
+	size_t buf_size = 0;
+	char *data;		/* Our receive data buffer. */ 
+	while (1) {
+		pthread_mutex_lock(&conn_mutex);
+		while (!GloSocket) {
+			pthread_cond_wait(&conn_cond, &conn_mutex);
+		}
+		sd = GloSocket;
+		GloSocket = 0;
+		pthread_mutex_unlock(&conn_mutex);
+		while (read(sd, &buf_size, sizeof(size_t)) > 0) {
+			// write protocol, first send buffer size through port, then send string itself
+			buf_size = ntohl(buf_size);
+			data = (char *)malloc(buf_size);
+			rc  = read (sd, data, buf_size);
+			if (rc != buf_size)
+				printf("rc not right: %d\n", rc);
+			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
+		}
+		printf("Client Disconnected\n");
+		//close sd might not be good idea since old sd can be reused...
+		close(sd);
+		free(data);
+	} 	
 }
 int init_cb(circular_buffer *cb, size_t sz) {
 	cb->buffer = (char *) malloc(MAXSLOTS * sz);
@@ -170,15 +182,7 @@ void servConn (int port) {
 		pthread_mutex_lock(&conn_mutex);
 		GloSocket = new_sd;
 		pthread_cond_signal(&conn_cond);
-		pthread_mutex_unlock(&conn_mutex);
-		
-			//       	if (fork () == 0) {	/* Child process. */
-			// close (sd);
-			// read (new_sd, &data, 14); /* Read our string: "Hello, World!" */
-			// printf ("Received string = %s\n", data);
-			// exit (0);
-			//       	}
-			
+		pthread_mutex_unlock(&conn_mutex);			
   	}
 }
 
@@ -186,10 +190,10 @@ void servConn (int port) {
 int main (int argc, char const *argv[])
 {
 	int rc;
-	
 	rc = parse_args(argc, argv, &params);
-	if (rc)
-		exit(0);
+	if (rc) exit(0);		
+	rc = init_cb(&GloBuff, sizeof(worker_message));
+	if (rc) exit(-1);
 	servConn (params.port);		/* Server port. */
 	return 0;
 }
