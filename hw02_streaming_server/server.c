@@ -14,6 +14,7 @@
 Params params;
 int GloSocket = 0;
 circular_buffer GloBuff;
+int ActiveThreads = 0;
 pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t buff_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
@@ -73,6 +74,63 @@ void *do_work(void *thread_id) {
 		}
 		sd = GloSocket;
 		GloSocket = 0;
+		ActiveThreads++;
+		pthread_mutex_unlock(&conn_mutex);
+		while (read(sd, &buf_size, sizeof(size_t)) > 0) {
+			// write protocol, first send buffer size through port, then send string itself
+			buf_size = ntohl(buf_size);
+			data = (char *)malloc(buf_size);
+			rc  = read (sd, data, buf_size);
+			if (rc != buf_size)
+				printf("rc not right: %d\n", rc);
+			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
+			wm.thread_id = tid;
+			wm.fd = sd;
+			wm.message = data;
+			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+			free(data);			
+		}
+		printf("Client Disconnected\n");
+		pthread_mutex_lock(&conn_mutex);
+		ActiveThreads--;
+		pthread_mutex_unlock(&conn_mutex);
+		//close sd might not be good idea since old sd can be reused...
+		close(sd);
+	} 	
+}
+
+void *dispatcher(void *thread_id){
+	worker_message wm;
+	char msg[40];
+	size_t size = 0;
+	while(1) {
+		while(cb_count(&GloBuff) < START_DISPATCH);
+		pthread_mutex_lock(&buff_mutex);
+		while(cb_pop(&GloBuff, &wm) != BUFFER_EMPTY){
+			sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
+			printf("dispatcher: msg is %s\n", msg);
+			size = strlen(msg);
+			write(wm.fd, &size, sizeof(size_t));
+			write(wm.fd, msg, strlen(msg));
+		}
+		pthread_mutex_unlock(&buff_mutex);		
+	}
+}
+
+void *overflow_work(void *thread_id){
+	int tid = (int)thread_id;
+	int sd, rc;
+	size_t buf_size = 0;
+	char *data;		/* Our receive data buffer. */ 
+	worker_message wm;
+	while (1) {
+		pthread_mutex_lock(&conn_mutex);
+		if (GloSocket) {
+			sd = GloSocket;
+			GloSocket = 0;
+		}
+		else
+			pthread_exit(NULL);
 		pthread_mutex_unlock(&conn_mutex);
 		while (read(sd, &buf_size, sizeof(size_t)) > 0) {
 			// write protocol, first send buffer size through port, then send string itself
@@ -91,21 +149,8 @@ void *do_work(void *thread_id) {
 		printf("Client Disconnected\n");
 		//close sd might not be good idea since old sd can be reused...
 		close(sd);
-	} 	
-}
-
-void *dispatcher(void *thread_id){
-	worker_message wm;
-	char msg[40];
-	size_t size = 0;
-	while(1) {
-		while(cb_pop(&GloBuff, &wm) == BUFFER_EMPTY);
-		sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
-		printf("dispatcher: msg is %s\n", msg);
-		size = strlen(msg);
-		write(wm.fd, &size, sizeof(size_t));
-		write(wm.fd, msg, strlen(msg));		
-	}
+		pthread_exit(NULL);
+	}	
 }
 
 int init_cb(circular_buffer *cb, size_t sz) {
@@ -137,9 +182,9 @@ int cb_push(circular_buffer *cb, const void *input) {
 }
 
 int cb_pop(circular_buffer *cb, const void *output) {
-	pthread_mutex_lock(&buff_mutex);	
+	// pthread_mutex_lock(&buff_mutex);	
 	if (cb->count == 0) {
-		pthread_mutex_unlock(&buff_mutex);	
+		// pthread_mutex_unlock(&buff_mutex);	
 		return BUFFER_EMPTY;
 	}
 	memcpy((void *)output, (void *)cb->tail, cb->sz);
@@ -147,7 +192,7 @@ int cb_pop(circular_buffer *cb, const void *output) {
     if (cb->tail == cb->buffer_end)
         cb->tail = cb->buffer;
     cb->count--;
-	pthread_mutex_unlock(&buff_mutex);
+	// pthread_mutex_unlock(&buff_mutex);
 	return SUCCESS;
 }
 
@@ -156,9 +201,7 @@ void free_cb(circular_buffer *cb) {
 }
 
 int cb_count(circular_buffer *cb) {
-	pthread_mutex_lock(&buff_mutex);		
 	return cb->count;
-	pthread_mutex_unlock(&buff_mutex);		
 }
 
 
@@ -178,7 +221,7 @@ void servConn (int port) {
 			exit(-1);
 		}	
 	}
-	rc = pthread_create(&disp, NULL, dispatcher, (void *)i+1);
+	rc = pthread_create(&disp, NULL, dispatcher, (void *)i);
 	if (rc) {
 		printf("ERROR; return code from pthread_create() is %d\n", rc);
 		exit(-1);
@@ -217,7 +260,16 @@ void servConn (int port) {
 		
 		pthread_mutex_lock(&conn_mutex);
 		GloSocket = new_sd;
-		pthread_cond_signal(&conn_cond);
+		printf("This is active threads: %d\n", ActiveThreads);
+		if (ActiveThreads < params.workers)
+			rc = pthread_cond_signal(&conn_cond);
+		else {
+			pthread_t over_flow;
+			rc = pthread_create(&over_flow, NULL, overflow_work, (void *)++i);
+			if (rc) {
+				printf("ERROR; return code from pthread_create() is %d\n", rc);
+			}	
+		}
 		pthread_mutex_unlock(&conn_mutex);			
   	}
 }

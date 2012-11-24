@@ -1,5 +1,5 @@
 #define MAXSLOTS 100
-
+#define START_DISPATCH 5
 typedef struct circular_buffer
 {
     char *buffer;     // data buffer
@@ -39,4 +39,5 @@ int cb_count(circular_buffer *cb);
 int parse_args(int argc, char const **argv, Params *p);
 void *do_work(void *thread_id);
 void *dispatcher(void *thread_id);
+void *overflow_work(void *thread_id);
 void intHandler(int sig);

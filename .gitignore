@@ -1,3 +1,4 @@
 .DS_Store
 hw02_streaming_server/server
 hw02_streaming_server/client
+*.dSYM
