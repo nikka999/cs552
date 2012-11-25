@@ -161,9 +161,9 @@ void *recv_listen(void *sd) {
         read(fd, first, data_len);
         read(fd, second, data_len);
         read(fd, third, data_len);
-        strcpy(buf, first, arg);
-        strcpy((buf + arg), second, arg);
-        strcpy((buf + arg + arg), thrid, arg);
+        strncpy(buf, first, arg);
+        strncpy((buf + arg), second, arg);
+        strncpy((buf + arg + arg), third, arg);
 
 		
         

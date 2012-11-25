@@ -197,14 +197,14 @@ void *dispatcher(void *thread_id){
             char first[arg];
             char second[arg];
             char third[arg];
-            strcpy(first, buf, arg);
-            strcpy(second, (buf + arg), arg);
-            strcpy(thrid, (buf + arg + arg), arg);
+            strncpy(first, buf, arg);
+            strncpy(second, (buf + arg), arg);
+            strncpy(third, (buf + arg + arg), arg);
             
             // Send image
             write(wm[i].fd, first, arg);
             write(wm[i].fd, second, arg);
-            write(wm[i].fd, thrid, arg);
+            write(wm[i].fd, third, arg);
             
             /**
             int i =0;
