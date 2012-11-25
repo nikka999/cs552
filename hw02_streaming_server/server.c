@@ -18,7 +18,7 @@ int ActiveThreads = 0;
 pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t buff_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
-// #define SORT
+#define SORT
 void print_help(void) {
 	printf("usage:	-h : print help message\n"
 			"	-p : specify port number\n"
@@ -86,7 +86,7 @@ void *do_work(void *thread_id) {
 			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
-			wm.message = data;
+			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 			free(data);			
 		}
@@ -99,38 +99,51 @@ void *do_work(void *thread_id) {
 	} 	
 }
 
+int wm_2_int(const void *a){
+	const worker_message *wm = a;
+	char *br1, *br2, *rank;
+	int irank, i;
+	br1 = strchr(wm->message, ':');
+	br2 = strchr(br1+1, ':');
+	irank = br2 - br1 - 1;
+	rank = (char *)malloc(irank);
+	br1++;
+	for (i = 0; i < irank; i++)
+		rank[i] = *(br1+i);
+	rank[i] = '\0';		
+	irank = atoi(rank);
+	free(rank);
+	return irank;
+}
+
+int compare_messages(const void *a, const void *b) {
+	int ia, ib;
+	ia = wm_2_int(a);
+	ib = wm_2_int(b);
+	return ib - ia;
+}
+
 void *dispatcher(void *thread_id){
 #ifdef SORT
 	worker_message wm[START_DISPATCH], buff_wm;
 	char msg[40];
 	size_t size = 0;
 	int i, priority;
-	int Lpri = MAX_PRIORITY;
-	char *pri;
 	while(1) {
 		while(cb_count(&GloBuff) < START_DISPATCH);
 		pthread_mutex_lock(&buff_mutex);
 		for (i = 0; cb_pop(&GloBuff, &wm[i]) != BUFFER_EMPTY; i++);
+		qsort(wm, START_DISPATCH, sizeof(worker_message), compare_messages);
 		for (i = 0; i < START_DISPATCH; i++) {
-			pri = strtok(wm[i].message, ":");
-			pri = strtok(NULL, ":");
-			priority = atoi(pri);
-			if (priority <= Lpri) {
-				cb_push(&GloBuff, &wm[i]);
-			}
-			else {
-				cb_pop(&GloBuff, &buff_wm);
-				cb_push(&GloBuff, &wm[i]);
-				cb_push()
-			}
+			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
+			printf("dispatcher: msg is %s\n", msg);
+			size = strlen(msg);
+			write(wm[i].fd, &size, sizeof(size_t));
+			write(wm[i].fd, msg, strlen(msg));			
 		}
+		pthread_mutex_unlock(&buff_mutex);		
 	}
-		sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
-		printf("dispatcher: msg is %s\n", msg);
-		size = strlen(msg);
-		write(wm.fd, &size, sizeof(size_t));
-		write(wm.fd, msg, strlen(msg));
-		pthread_mutex_unlock(&buff_mutex);
+
 #else
 		worker_message wm;
 		char msg[40];
@@ -175,7 +188,7 @@ void *overflow_work(void *thread_id){
 			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
-			wm.message = data;
+			strncpy(wm.message, data, MESSAGE_SIZE);			
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 			free(data);			
 		}

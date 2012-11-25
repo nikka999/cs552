@@ -105,9 +105,9 @@ int main (int argc, char const *argv[])
 	char buffer[20], msg[50];
 	pthread_t listener;
 	char *req = "stop_movie:batman";
-	parse_args(argc, argv, &params);
+	rc = parse_args(argc, argv, &params);
+	if (rc) exit(0);		
   	int sd = cliConn ("localhost", 5050);
-	printf("sd: %d\n", sd);
 	rc = pthread_create(&listener, NULL, recv_listen, (void *) sd);
 	if (rc) {
 		printf("ERROR; return code from pthread_create() is %d\n", rc);
