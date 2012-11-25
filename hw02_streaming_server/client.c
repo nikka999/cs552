@@ -102,6 +102,7 @@ int command_line(int sd) {
 	char *ptr, *args[5];
 	int i;
 	size_t len;
+	memset(msg, '\0', 50);
 	while (1) {
 		while(fgets(buffer, 50, stdin)) {
 			for (i = 0; buffer[i] != '\n'; i++);
@@ -112,22 +113,28 @@ int command_line(int sd) {
 				args[i] = ptr;
 				ptr = strtok(NULL, " ");
 				i++;				
-			} 
+			}
 			if (!strcmp(args[0], "s")) {
 				if (!strcmp(args[1], "start")) {
-					sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "start_movie", args[2], args[3]);
+					if (i == 4)
+						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "start_movie", args[2], args[3]);
 				}
 				else if (!strcmp(args[1], "seek")) {
-					sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);										
+					if (i == 4)
+						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);										
 				}
 				else if (!strcmp(args[1], "stop")) {
-					sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "stop_movie", args[2]);										
+					if (i == 4)
+						sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "stop_movie", args[2]);										
 				}
-				len = strlen(msg);
-				len = htonl(len);
-				write(sd, &len, sizeof(size_t));
-				printf("the msg is: %s\n", msg);
-				write(sd, msg, strlen(msg));		
+				if (*msg != '\0') {
+					len = strlen(msg);
+					len = htonl(len);
+					write(sd, &len, sizeof(size_t));
+					printf("the msg is: %s\n", msg);
+					write(sd, msg, strlen(msg));
+					memset(msg, 0, 50);										
+				}
 			}
 			else if(!strcmp(args[0], "q")) {
 				// close(sd);
