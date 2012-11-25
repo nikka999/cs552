@@ -40,7 +40,7 @@ main(int argc,char *argv[]) {
   if (argc < 2) {
     fprintf (stderr, "Usage: %s [-n] filename.ppm\n", argv[0]);
     exit (1);
-  } 
+  }
   
   if ((fp = fopen (argv[1],"r")) == NULL) {
     fprintf (stderr, "%s: Can't open input file %s.\n", argv[0], argv[1]);

@@ -316,7 +316,15 @@ int main (int argc, char const *argv[])
 {
 	int rc;
 	rc = parse_args(argc, argv, &params);
-	if (rc) exit(0);		
+	if (rc) exit(0);
+    /**
+     * In udevd.c:
+     * passed from worker to main process
+     * struct worker_message {
+     *    pid_t pid;
+     *    int exitcode;
+     * }
+     */
 	rc = init_cb(&GloBuff, sizeof(worker_message));
 	signal(SIGINT, intHandler);
    	signal(SIGKILL, intHandler);
