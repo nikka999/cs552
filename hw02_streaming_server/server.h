@@ -1,5 +1,6 @@
 #define MAXSLOTS 100
 #define START_DISPATCH 5
+#define MAX_PRIORITY 10
 typedef struct circular_buffer
 {
     char *buffer;     // data buffer

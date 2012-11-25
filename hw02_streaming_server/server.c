@@ -18,7 +18,7 @@ int ActiveThreads = 0;
 pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t buff_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
-
+// #define SORT
 void print_help(void) {
 	printf("usage:	-h : print help message\n"
 			"	-p : specify port number\n"
@@ -100,21 +100,54 @@ void *do_work(void *thread_id) {
 }
 
 void *dispatcher(void *thread_id){
-	worker_message wm;
+#ifdef SORT
+	worker_message wm[START_DISPATCH], buff_wm;
 	char msg[40];
 	size_t size = 0;
+	int i, priority;
+	int Lpri = MAX_PRIORITY;
+	char *pri;
 	while(1) {
 		while(cb_count(&GloBuff) < START_DISPATCH);
 		pthread_mutex_lock(&buff_mutex);
-		while(cb_pop(&GloBuff, &wm) != BUFFER_EMPTY){
-			sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
-			printf("dispatcher: msg is %s\n", msg);
-			size = strlen(msg);
-			write(wm.fd, &size, sizeof(size_t));
-			write(wm.fd, msg, strlen(msg));
+		for (i = 0; cb_pop(&GloBuff, &wm[i]) != BUFFER_EMPTY; i++);
+		for (i = 0; i < START_DISPATCH; i++) {
+			pri = strtok(wm[i].message, ":");
+			pri = strtok(NULL, ":");
+			priority = atoi(pri);
+			if (priority <= Lpri) {
+				cb_push(&GloBuff, &wm[i]);
+			}
+			else {
+				cb_pop(&GloBuff, &buff_wm);
+				cb_push(&GloBuff, &wm[i]);
+				cb_push()
+			}
 		}
-		pthread_mutex_unlock(&buff_mutex);		
 	}
+		sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
+		printf("dispatcher: msg is %s\n", msg);
+		size = strlen(msg);
+		write(wm.fd, &size, sizeof(size_t));
+		write(wm.fd, msg, strlen(msg));
+		pthread_mutex_unlock(&buff_mutex);
+#else
+		worker_message wm;
+		char msg[40];
+		size_t size = 0;
+		while(1) {
+			while(cb_count(&GloBuff) < START_DISPATCH);
+			pthread_mutex_lock(&buff_mutex);
+			while(cb_pop(&GloBuff, &wm) != BUFFER_EMPTY){
+				sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
+				printf("dispatcher: msg is %s\n", msg);
+				size = strlen(msg);
+				write(wm.fd, &size, sizeof(size_t));
+				write(wm.fd, msg, strlen(msg));
+			}
+			pthread_mutex_unlock(&buff_mutex);		
+		}
+#endif		
 }
 
 void *overflow_work(void *thread_id){

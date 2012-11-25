@@ -17,14 +17,14 @@ Params params;
 
 void print_help(void) {
 	printf("usage:	-h : print help message\n"
-			"	-p : specify port number\n"
-			"	-w : specify number of workers\n");	
+			"	-i : specify Client ID (in form number-hostname)\n"
+			"	-p : specify Client Priority\n");	
 }
 
 int parse_args(int argc, char const **argv, Params *p) {
 	int count = 1;
 //initialize port and workers to default, incase user does not specify one or both of them.
-	p->clientid = "1nikka";
+	p->clientid = "1-nikka";
 	p->priority = 10;
 
 	if (argc == 1) {
@@ -39,7 +39,7 @@ int parse_args(int argc, char const **argv, Params *p) {
 			}
 			else if (!strcmp(argv[count], "-i")) {
 				count++;
-				p->clientid = argv[count];
+				p->clientid = (char *)argv[count];
 				count++;
 			}
 			else if (!strcmp(argv[count], "-p")) {
@@ -65,7 +65,7 @@ void *recv_listen(void *sd) {
 		read(fd, &data_len, sizeof(size_t));
 		data = (char *)malloc(data_len);
 		read(fd, data, data_len);
-		printf("data is: %s\n",data);		
+		printf("data is: %s\n",data);
 	}	
 }
 
@@ -102,27 +102,29 @@ int main (int argc, char const *argv[])
 {
 	size_t len;
 	int rc;
-	char buffer[20];
+	char buffer[20], msg[50];
 	pthread_t listener;
-	char *msg = "Just doing some random tests...";
+	char *req = "stop_movie:batman";
 	parse_args(argc, argv, &params);
   	int sd = cliConn ("localhost", 5050);
+	printf("sd: %d\n", sd);
 	rc = pthread_create(&listener, NULL, recv_listen, (void *) sd);
 	if (rc) {
 		printf("ERROR; return code from pthread_create() is %d\n", rc);
 		exit(-1);
 	}
-	len = strlen(msg);
-	len = htonl(len);
 	while(1) {
 		while(fgets(buffer, 20, stdin)) {
 			if (!strcmp(buffer, "s\n")) {
+				sprintf(msg, "%s:%d:%s", params.clientid, params.priority, req);
+				len = strlen(msg);
+				len = htonl(len);
 				write(sd, &len, sizeof(size_t));
 				printf("the msg is: %s\n", msg);
 				write(sd, msg, strlen(msg));		
 			}
 			else if(!strcmp(buffer, "q\n")) {
-				close(sd);
+				// close(sd);
 				exit(0);
 			}
 		}
