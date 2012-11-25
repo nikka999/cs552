@@ -82,13 +82,13 @@ void *do_work(void *thread_id) {
 			rc  = read (sd, data, buf_size);
 			if (rc != buf_size)
 				printf("rc not right: %d\n", rc);
+			printf("ss = %s\n", data);
 			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
 			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 			free(data);
-			bzero(data, buf_size)
 		}
 		printf("Client Disconnected\n");
 		pthread_mutex_lock(&conn_mutex);
@@ -172,6 +172,7 @@ void *overflow_work(void *thread_id){
 			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 			free(data);
+			memset(data, '\0', buf_size);
 		}
 		printf("Client Disconnected\n");
 		//close sd might not be good idea since old sd can be reused...
