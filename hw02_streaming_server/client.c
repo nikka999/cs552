@@ -135,6 +135,7 @@ int command_line(int sd) {
 					printf("the msg is: %s\n", msg);
 					write(sd, msg, strlen(msg));
 					memset(msg, 0, 50);
+					bzero(msg, 20);
 				}
 			}
 			else if(!strcmp(args[0], "q")) {

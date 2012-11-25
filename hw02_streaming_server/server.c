@@ -88,6 +88,7 @@ void *do_work(void *thread_id) {
 			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 			free(data);
+			bzero(data, buf_size)
 		}
 		printf("Client Disconnected\n");
 		pthread_mutex_lock(&conn_mutex);
