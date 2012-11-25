@@ -18,7 +18,6 @@ int ActiveThreads = 0;
 pthread_mutex_t conn_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t buff_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
-#define SORT
 void print_help(void) {
 	printf("usage:	-h : print help message\n"
 			"	-p : specify port number\n"
@@ -124,7 +123,6 @@ int compare_messages(const void *a, const void *b) {
 }
 
 void *dispatcher(void *thread_id){
-#ifdef SORT
 	worker_message wm[START_DISPATCH], buff_wm;
 	char msg[40];
 	size_t size = 0;
@@ -142,25 +140,7 @@ void *dispatcher(void *thread_id){
 			write(wm[i].fd, msg, strlen(msg));			
 		}
 		pthread_mutex_unlock(&buff_mutex);		
-	}
-
-#else
-		worker_message wm;
-		char msg[40];
-		size_t size = 0;
-		while(1) {
-			while(cb_count(&GloBuff) < START_DISPATCH);
-			pthread_mutex_lock(&buff_mutex);
-			while(cb_pop(&GloBuff, &wm) != BUFFER_EMPTY){
-				sprintf(msg, "%d,%d,%s", wm.thread_id, wm.fd, wm.message);
-				printf("dispatcher: msg is %s\n", msg);
-				size = strlen(msg);
-				write(wm.fd, &size, sizeof(size_t));
-				write(wm.fd, msg, strlen(msg));
-			}
-			pthread_mutex_unlock(&buff_mutex);		
-		}
-#endif		
+	}		
 }
 
 void *overflow_work(void *thread_id){
