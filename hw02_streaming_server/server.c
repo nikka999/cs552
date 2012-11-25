@@ -156,7 +156,7 @@ void *dispatcher(void *thread_id){
             
             
             /** SENDING IMAGE */
-            register pixel** pixarray;
+            pixel** pixarray;
             FILE *fp;
             int cols, rows;
             pixval maxval;

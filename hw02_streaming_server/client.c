@@ -161,7 +161,7 @@ void *recv_listen(void *sd) {
 		read(fd, &data_len, sizeof(size_t));
         data_len=ntohl(data_len);
         // Read pixarray
-        pixarray = (register pixel**)malloc(data_len);
+        pixarray = (pixel**)malloc(data_len);
 		read(fd, pixarray, data_len);
         printf("type=%d, col=%d, row=%d, data_len=%d\n",type, col, row, data_len);
 	}
