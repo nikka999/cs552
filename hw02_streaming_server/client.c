@@ -124,7 +124,7 @@ int command_line(int sd) {
 						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);										
 				}
 				else if (!strcmp(args[1], "stop")) {
-					if (i == 4)
+					if (i == 3)
 						sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "stop_movie", args[2]);										
 				}
 				if (*msg != '\0') {
