@@ -1,6 +1,7 @@
 #define MAXSLOTS 100
 #define START_DISPATCH 5
 #define MAX_PRIORITY 10
+#define MESSAGE_SIZE 40
 typedef struct circular_buffer
 {
     char *buffer;     // data buffer
@@ -16,7 +17,7 @@ typedef struct worker_message
 {
 	int thread_id; // worker thread ID
 	int fd; // Client Socket ID
-	char *message; //Client Message
+	char message[MESSAGE_SIZE]; //Client Message
 } worker_message;
 
 enum Errors {
@@ -42,3 +43,5 @@ void *do_work(void *thread_id);
 void *dispatcher(void *thread_id);
 void *overflow_work(void *thread_id);
 void intHandler(int sig);
+int compare_messages(const void *a, const void *b);
+int wm_2_int(const void *a);
