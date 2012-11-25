@@ -97,12 +97,50 @@ int cliConn (char *host, int port) {
   return (sd);
 }
 
+int command_line(int sd) {
+	char buffer[20], msg[50];
+	char *ptr, *args[5];
+	int i;
+	size_t len;
+	while (1) {
+		while(fgets(buffer, 50, stdin)) {
+			for (i = 0; buffer[i] != '\n'; i++);
+			buffer[i] = '\0';
+			i = 0;
+			ptr = strtok(buffer, " ");
+			while (ptr != NULL) {
+				args[i] = ptr;
+				ptr = strtok(NULL, " ");
+				i++;				
+			} 
+			if (!strcmp(args[0], "s")) {
+				if (!strcmp(args[1], "start")) {
+					sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "start_movie", args[2], args[3]);
+				}
+				else if (!strcmp(args[1], "seek")) {
+					sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);										
+				}
+				else if (!strcmp(args[1], "stop")) {
+					sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "stop_movie", args[2]);										
+				}
+				len = strlen(msg);
+				len = htonl(len);
+				write(sd, &len, sizeof(size_t));
+				printf("the msg is: %s\n", msg);
+				write(sd, msg, strlen(msg));		
+			}
+			else if(!strcmp(args[0], "q")) {
+				// close(sd);
+				return 1;
+			}
+		}
+	}
+}
 
 int main (int argc, char const *argv[])
 {
-	size_t len;
 	int rc;
-	char buffer[20], msg[50];
+	// char buffer[20], msg[50];
 	pthread_t listener;
 	char *req = "stop_movie:batman";
 	rc = parse_args(argc, argv, &params);
@@ -113,22 +151,8 @@ int main (int argc, char const *argv[])
 		printf("ERROR; return code from pthread_create() is %d\n", rc);
 		exit(-1);
 	}
-	while(1) {
-		while(fgets(buffer, 20, stdin)) {
-			if (!strcmp(buffer, "s\n")) {
-				sprintf(msg, "%s:%d:%s", params.clientid, params.priority, req);
-				len = strlen(msg);
-				len = htonl(len);
-				write(sd, &len, sizeof(size_t));
-				printf("the msg is: %s\n", msg);
-				write(sd, msg, strlen(msg));		
-			}
-			else if(!strcmp(buffer, "q\n")) {
-				// close(sd);
-				exit(0);
-			}
-		}
-	}
+	rc = command_line(sd);
+	if (rc) exit(0);		
   	return 0;
 }
 
