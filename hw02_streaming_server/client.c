@@ -155,12 +155,12 @@ void *recv_listen(void *sd) {
         buf = (unsigned char *)malloc(data_len);
         
         int arg = cols*rows;
-        char first[arg];
-        char second[arg];
-        char third[arg];
-        read(fd, first, data_len);
-        read(fd, second, data_len);
-        read(fd, third, data_len);
+        unsigned char first[arg];
+        unsigned char second[arg];
+        unsigned char third[arg];
+        read(fd, first, arg);
+        read(fd, second, arg);
+        read(fd, third, arg);
         strncpy(buf, first, arg);
         strncpy((buf + arg), second, arg);
         strncpy((buf + arg + arg), third, arg);

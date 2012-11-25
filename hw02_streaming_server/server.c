@@ -194,9 +194,9 @@ void *dispatcher(void *thread_id){
             
             // Parse image into 3 packets.
             int arg = cols*rows;
-            char first[arg];
-            char second[arg];
-            char third[arg];
+            unsigned char first[arg];
+            unsigned char second[arg];
+            unsigned char third[arg];
             strncpy(first, buf, arg);
             strncpy(second, (buf + arg), arg);
             strncpy(third, (buf + arg + arg), arg);
