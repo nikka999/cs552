@@ -122,6 +122,7 @@ int command_line(int sd) {
 				else if (!strcmp(args[1], "seek")) {
 					if (i == 4)
 						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);
+						printf("arg2=%s, arg3=%s\n", args[2], args[3]);
 				}
 				else if (!strcmp(args[1], "stop")) {
 					if (i == 3)
