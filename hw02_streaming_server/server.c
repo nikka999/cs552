@@ -194,7 +194,10 @@ void *dispatcher(void *thread_id){
             
             // Send image
             write(wm[i].fd, buf, cols*rows*3);
-            
+	    int i =0;
+	   for (i; i < (cols*rows*3); i++) {
+	   printf("%d,", buf[i]);
+}
 			//write(wm[i].fd, msg, strlen(msg));
 		}
 		pthread_mutex_unlock(&buff_mutex);
