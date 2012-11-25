@@ -25,6 +25,7 @@
 #include <X11/keysym.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <netpbm/ppm.h>
 /* You might need to specify:
  * #include <ppm.h>
@@ -96,7 +97,7 @@ main(int argc,char *argv[]) {
       fprintf (stderr, "%s: Can't open input file:\n %s.\n", s);
       exit (1);
     }
-   
+
     /* Use the following line in the producer/worker threads.  */
 
     pixarray = ppm_readppm (fp, &cols, &rows, &maxval);
@@ -117,10 +118,11 @@ main(int argc,char *argv[]) {
 	buf[(y*cols+x)*3+2] = PPM_GETB(pixarray[rows-y-1][x]);
       }
     }
-
+	printf("frame number = %d\n", frame_count);
     ppm_freearray (pixarray, rows);
     glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
     glFlush ();
+	usleep(24100);
   }
 }
 

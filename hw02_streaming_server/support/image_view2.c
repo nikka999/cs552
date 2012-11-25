@@ -144,7 +144,7 @@ main(int argc,char *argv[]) {
 
     glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
     glFlush ();
-    
+	usleep(24100);    
   }
 }
 

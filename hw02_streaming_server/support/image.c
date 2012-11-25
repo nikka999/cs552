@@ -50,6 +50,7 @@ main(int argc,char *argv[]) {
   pixarray = ppm_readppm (fp, &cols, &rows, &maxval);
 
   buf = (unsigned char *)malloc (cols*rows*3);
+	printf("COLS = %d, ROWS = %d\n", cols, rows);
 
   for (y = 0; y < rows; y++) {
     for (x = 0; x < cols; x++) {
