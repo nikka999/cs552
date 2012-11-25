@@ -136,8 +136,8 @@ void *recv_listen(void *sd) {
 	int fd = (int) sd;
 	size_t data_len;
     size_t type;
-    size_t col;
-    size_t row;
+    size_t cols;
+    size_t rows;
     
 	char *data;
     
@@ -150,20 +150,20 @@ void *recv_listen(void *sd) {
         type = ntohl(type);
         // if seek
         // Read col
-        read(fd, &col, sizeof(size_t));
-        col = ntohl(col);
+        read(fd, &cols, sizeof(size_t));
+        cols = ntohl(cols);
         // Read row
-        read(fd, &row, sizeof(size_t));
-        row = ntohl(row);
+        read(fd, &rows, sizeof(size_t));
+        rows = ntohl(rows);
         // Read data_len
-		read(fd, &data_len, sizeof(size_t));
+	read(fd, &data_len, sizeof(size_t));
         data_len=ntohl(data_len);
         // Read pixarray
         buf = (unsigned char *)malloc(data_len);
 		read(fd, buf, data_len);
-        printf("type=%d, col=%d, row=%d, data_len=%d\n",type, col, row, data_len);
+        printf("type=%d, col=%d, row=%d, data_len=%d\n",type, cols, rows, data_len);
         
-        make_window (cols, rows, argv[1], border);
+        make_window (cols, rows, "-n", 1);
         glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
         glMatrixMode (GL_PROJECTION);
         glOrtho (0, cols, 0, rows, -1, 1);
