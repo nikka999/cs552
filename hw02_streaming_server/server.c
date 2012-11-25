@@ -178,6 +178,7 @@ void *dispatcher(void *thread_id){
                     buf[(y*cols+x)*3+2] = PPM_GETB(pixarray[rows-y-1][x]);
                 }
             }
+		ppm_freearray(pixarray, rows);
 
             // Send type
             size_t len;
@@ -191,7 +192,7 @@ void *dispatcher(void *thread_id){
             write(wm[i].fd, &len, sizeof(size_t));
             
             // Send image
-            write(wm[i].fd, &buf, cols*rows*3);
+            write(wm[i].fd, buf, cols*rows*3);
             
 			//write(wm[i].fd, msg, strlen(msg));
 		}
