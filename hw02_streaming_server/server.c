@@ -20,16 +20,16 @@ pthread_mutex_t buff_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conn_cond = PTHREAD_COND_INITIALIZER;
 void print_help(void) {
 	printf("usage:	-h : print help message\n"
-			"	-p : specify port number\n"
-			"	-w : specify number of workers\n");	
+           "	-p : specify port number\n"
+           "	-w : specify number of workers\n");
 }
 
 int parse_args(int argc, char const **argv, Params *p) {
 	int count = 1;
-//initialize port and workers to default, incase user does not specify one or both of them.
+    //initialize port and workers to default, incase user does not specify one or both of them.
 	p->port = 5050;
 	p->workers = 10;
-
+    
 	if (argc == 1) {
 		printf("You have not specified any parameters. So we will run using default params.\n");
 		print_help();
@@ -38,7 +38,7 @@ int parse_args(int argc, char const **argv, Params *p) {
 		while (count < argc) {
 			if (!strcmp(argv[count], "-h")) {
 				print_help();
-				return 1;			
+				return 1;
 			}
 			else if (!strcmp(argv[count], "-p")) {
 				count++;
@@ -54,7 +54,7 @@ int parse_args(int argc, char const **argv, Params *p) {
 				printf("unkown parameter: %s\n", argv[count]);
 				return 1;
 			}
-		}		
+		}
 	}
 	printf("Server started. Port: %d, Number of Workers: %d\n", p->port, p->workers);
 	return 0;
@@ -64,7 +64,7 @@ void *do_work(void *thread_id) {
 	int tid = (int)thread_id;
 	int sd, rc;
 	size_t buf_size = 0;
-	char *data;		/* Our receive data buffer. */ 
+	char *data;		/* Our receive data buffer. */
 	worker_message wm;
 	while (1) {
 		pthread_mutex_lock(&conn_mutex);
@@ -87,7 +87,7 @@ void *do_work(void *thread_id) {
 			wm.fd = sd;
 			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
-			free(data);			
+			free(data);
 		}
 		printf("Client Disconnected\n");
 		pthread_mutex_lock(&conn_mutex);
@@ -95,7 +95,7 @@ void *do_work(void *thread_id) {
 		pthread_mutex_unlock(&conn_mutex);
 		//close sd might not be good idea since old sd can be reused...
 		close(sd);
-	} 	
+	}
 }
 
 int wm_2_int(const void *a){
@@ -109,7 +109,7 @@ int wm_2_int(const void *a){
 	br1++;
 	for (i = 0; i < irank; i++)
 		rank[i] = *(br1+i);
-	rank[i] = '\0';		
+	rank[i] = '\0';
 	irank = atoi(rank);
 	free(rank);
 	return irank;
@@ -137,17 +137,17 @@ void *dispatcher(void *thread_id){
 			printf("dispatcher: msg is %s\n", msg);
 			size = strlen(msg);
 			write(wm[i].fd, &size, sizeof(size_t));
-			write(wm[i].fd, msg, strlen(msg));			
+			write(wm[i].fd, msg, strlen(msg));
 		}
-		pthread_mutex_unlock(&buff_mutex);		
-	}		
+		pthread_mutex_unlock(&buff_mutex);
+	}
 }
 
 void *overflow_work(void *thread_id){
 	int tid = (int)thread_id;
 	int sd, rc;
 	size_t buf_size = 0;
-	char *data;		/* Our receive data buffer. */ 
+	char *data;		/* Our receive data buffer. */
 	worker_message wm;
 	while (1) {
 		pthread_mutex_lock(&conn_mutex);
@@ -168,15 +168,15 @@ void *overflow_work(void *thread_id){
 			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
-			strncpy(wm.message, data, MESSAGE_SIZE);			
+			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
-			free(data);			
+			free(data);
 		}
 		printf("Client Disconnected\n");
 		//close sd might not be good idea since old sd can be reused...
 		close(sd);
 		pthread_exit(NULL);
-	}	
+	}
 }
 
 int init_cb(circular_buffer *cb, size_t sz) {
@@ -193,9 +193,9 @@ int init_cb(circular_buffer *cb, size_t sz) {
 }
 
 int cb_push(circular_buffer *cb, const void *input) {
-	pthread_mutex_lock(&buff_mutex);	
+	pthread_mutex_lock(&buff_mutex);
 	if (cb->count == cb->capacity){
-		pthread_mutex_unlock(&buff_mutex);	
+		pthread_mutex_unlock(&buff_mutex);
 		return BUFFER_FULL;
 	}
 	memcpy((void *)cb->head, input, cb->sz);
@@ -203,14 +203,14 @@ int cb_push(circular_buffer *cb, const void *input) {
 	if (cb->head == cb->buffer_end)
         cb->head = cb->buffer;
     cb->count++;
-	pthread_mutex_unlock(&buff_mutex);	
+	pthread_mutex_unlock(&buff_mutex);
 	return SUCCESS;
 }
 
 int cb_pop(circular_buffer *cb, const void *output) {
-	// pthread_mutex_lock(&buff_mutex);	
+	// pthread_mutex_lock(&buff_mutex);
 	if (cb->count == 0) {
-		// pthread_mutex_unlock(&buff_mutex);	
+		// pthread_mutex_unlock(&buff_mutex);
 		return BUFFER_EMPTY;
 	}
 	memcpy((void *)output, (void *)cb->tail, cb->sz);
@@ -232,7 +232,7 @@ int cb_count(circular_buffer *cb) {
 
 
 void servConn (int port) {
-
+    
   	int sd, new_sd;
   	struct sockaddr_in name, cli_name;
   	int sock_opt_val = 1;
@@ -245,7 +245,7 @@ void servConn (int port) {
 		if (rc) {
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
 			exit(-1);
-		}	
+		}
 	}
 	rc = pthread_create(&disp, NULL, dispatcher, (void *)i);
 	if (rc) {
@@ -256,29 +256,29 @@ void servConn (int port) {
     	perror("(servConn): socket() error");
     	exit (-1);
   	}
-
+    
   	if (setsockopt (sd, SOL_SOCKET, SO_REUSEADDR, (char *) &sock_opt_val,
-		  	sizeof(sock_opt_val)) < 0) {
+                    sizeof(sock_opt_val)) < 0) {
     	perror ("(servConn): Failed to set SO_REUSEADDR on INET socket");
     	exit (-1);
   	}
-
+    
   	name.sin_family = AF_INET;
   	name.sin_port = htons (port);
   	name.sin_addr.s_addr = htonl(INADDR_ANY);
-  
+    
   	if (bind (sd, (struct sockaddr *)&name, sizeof(name)) < 0) {
     	perror ("(servConn): bind() error");
     	exit (-1);
   	}
-
+    
   	listen (sd, 5);
-
+    
   	for (;;) {
       	cli_len = sizeof (cli_name);
       	new_sd = accept (sd, (struct sockaddr *) &cli_name, &cli_len);
       	printf ("Assigning new socket descriptor:  %d\n", new_sd);
-      
+        
       	if (new_sd < 0) {
 			perror ("(servConn): accept() error");
 			exit (-1);
@@ -294,9 +294,9 @@ void servConn (int port) {
 			rc = pthread_create(&over_flow, NULL, overflow_work, (void *)++i);
 			if (rc) {
 				printf("ERROR; return code from pthread_create() is %d\n", rc);
-			}	
+			}
 		}
-		pthread_mutex_unlock(&conn_mutex);			
+		pthread_mutex_unlock(&conn_mutex);
   	}
 }
 
@@ -310,14 +310,6 @@ int main (int argc, char const *argv[])
 	int rc;
 	rc = parse_args(argc, argv, &params);
 	if (rc) exit(0);
-    /**
-     * In udevd.c:
-     * passed from worker to main process
-     * struct worker_message {
-     *    pid_t pid;
-     *    int exitcode;
-     * }
-     */
 	rc = init_cb(&GloBuff, sizeof(worker_message));
 	signal(SIGINT, intHandler);
    	signal(SIGKILL, intHandler);
