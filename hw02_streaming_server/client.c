@@ -143,6 +143,13 @@ void *recv_listen(void *sd) {
     Window window;
     Display *dpy;
     GLXContext cx;
+        make_window (160, 120, "Image Viewer", 1 , &window, &cx, &dpy);
+        glXMakeCurrent (dpy, window, cx);
+        glMatrixMode (GL_PROJECTION);
+        glOrtho (0, cols, 0, rows, -1, 1);
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+        glMatrixMode (GL_MODELVIEW);
+        glRasterPos2i (0, 0);
 
 	while(1) {
         // Read type.
@@ -168,14 +175,6 @@ void *recv_listen(void *sd) {
 	read(fd, (buf+4*arg), arg);
 
         // printf("data_len=%d\n", data_len);
-
-        make_window (160, 120, "Image Viewer", 1 , &window, &cx, &dpy);
-        glxMakeCurrent (dpy, window, cx);
-        glMatrixMode (GL_PROJECTION);
-        glOrtho (0, cols, 0, rows, -1, 1);
-        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-        glMatrixMode (GL_MODELVIEW);
-        glRasterPos2i (0, 0);
 
         glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
         glFlush ();
