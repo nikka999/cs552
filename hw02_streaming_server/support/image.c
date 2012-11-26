@@ -15,7 +15,7 @@
 #include <X11/keysym.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <netpbm/ppm.h>
+#include <support/netpbm/ppm.h>
 
 Display *dpy;
 Window window;

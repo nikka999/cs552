@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include "server.h"
+#include <support/netpbm/ppm.h>
 
 Params params;
 int GloSocket = 0;
@@ -124,6 +125,23 @@ int compare_messages(const void *a, const void *b) {
 	return ib - ia;
 }
 
+int get_arg(char msg[]) {
+    char *results;
+    char clientID[20];
+    char priority[4];
+    char request[12];
+    char arguments[4];
+    int i = 0;
+    results = strtok(msg, ":");
+
+    while (result != NULL) {
+        printf("\n%s", results);
+        results = strtok(msg, ":");
+    }
+    return 0;
+
+}
+
 void *dispatcher(void *thread_id){
 	worker_message wm[START_DISPATCH], buff_wm;
 	char msg[40];
@@ -138,6 +156,23 @@ void *dispatcher(void *thread_id){
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
 			printf("dispatcher: msg is %s\n", msg);
 			size = strlen(msg);
+            /** SENDING IMAGE */
+            register pixel** pixarray;
+            FILE *fp;
+            int cols, rows;
+            pixval maxval;
+            unsigned char *buf;
+            get_arg(msg);
+            /**
+            if ((fp = fopen ("support/images/sw","r")) == NULL) {
+                fprintf (stderr, "%s: Can't open input file %s.\n", argv[0], argv[1]);
+                exit (1);
+            }
+             */
+            pixarray = ppm_readppm (fp, &cols, &rows, &maxval);
+            buf = (unsigned char *)malloc (cols*rows*3);
+            printf("COLS = %d, ROWS = %d\n", cols, rows);
+            
 			write(wm[i].fd, &size, sizeof(size_t));
 			write(wm[i].fd, msg, strlen(msg));
 		}
