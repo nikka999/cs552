@@ -153,13 +153,28 @@ void *recv_listen(void *sd) {
         
         // Read pixarray
         buf = (unsigned char *)malloc(data_len);
-		read(fd, buf, data_len);
-        printf("data_len=%d\n", data_len);
+        
+        int arg = cols*rows;
+        char first[arg];
+        char second[arg];
+        char third[arg];
+        read(fd, first, data_len);
+        read(fd, second, data_len);
+        read(fd, third, data_len);
+        strcpy(buf, first, arg);
+        strcpy((buf + arg), second, arg);
+        strcpy((buf + arg + arg), thrid, arg);
+
+		
+        
 	
-	int i =0;
-	for (i; i < (cols*rows*3); i++) {
-	printf("%d,", buf[i]);	
-}        
+        printf("data_len=%d\n", data_len);
+        /**
+        int i =0;
+        for (i; i < (cols*rows*3); i++) {
+            printf("%d,", buf[i]);
+        }  
+         */
         make_window (160, 120, "Image Viewer", 1);
         
         glMatrixMode (GL_PROJECTION);

@@ -192,12 +192,27 @@ void *dispatcher(void *thread_id){
             len = htonl(len);
             write(wm[i].fd, &len, sizeof(size_t));
             
+            // Parse image into 3 packets.
+            int arg = cols*rows;
+            char first[arg];
+            char second[arg];
+            char third[arg];
+            strcpy(first, buf, arg);
+            strcpy(second, (buf + arg), arg);
+            strcpy(thrid, (buf + arg + arg), arg);
+            
             // Send image
-            write(wm[i].fd, buf, cols*rows*3);
-	    int i =0;
-	   for (i; i < (cols*rows*3); i++) {
-	   printf("%d,", buf[i]);
-}
+            write(wm[i].fd, first, arg);
+            write(wm[i].fd, second, arg);
+            write(wm[i].fd, thrid, arg);
+            
+            /**
+            int i =0;
+            for (i; i < (cols*rows*3); i++) {
+                printf("%d,", buf[i]);
+            }
+             */
+            
 			//write(wm[i].fd, msg, strlen(msg));
 		}
 		pthread_mutex_unlock(&buff_mutex);
