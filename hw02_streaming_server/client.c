@@ -135,13 +135,35 @@ int parse_args(int argc, char const **argv, Params *p) {
 void *recv_listen(void *sd) {
 	int fd = (int) sd;
 	size_t data_len;
+    size_t type;
+    size_t col;
+    size_t row;
+    
 	char *data;
     
+    register pixel** pixarray;
+    FILE *fp;
+    int cols, rows;
+    pixval maxval;
+    
 	while(1) {
+        // Read type.
+        read(fd, &type, sizeof(size_t));
+        type = ntohl(type);
+        // if seek
+        // Read col
+        read(fd, &col, sizeof(size_t));
+        col = ntohl(col);
+        // Read row
+        read(fd, &row, sizeof(size_t));
+        row = ntohl(row);
+        // Read data_len
 		read(fd, &data_len, sizeof(size_t));
-		data = (char *)malloc(data_len);
-		read(fd, data, data_len);
-		printf("data is: %s\n",data);
+        data_len=ntohl(data_len);
+        // Read pixarray
+        pixarray = (register pixel**)malloc(data_len);
+		read(fd, pixarray, data_len);
+        printf("type=%d, col=%d, row=%d, data_len=%d\n",type, col, row, data_len);
 	}
 }
 

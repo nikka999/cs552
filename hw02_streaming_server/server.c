@@ -151,8 +151,10 @@ void *dispatcher(void *thread_id){
 		for (i = 0; i < START_DISPATCH; i++) {
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
 			printf("dispatcher: msg is %s\n", msg);
-			size = strlen(msg);
+			
 	
+            
+            
             /** SENDING IMAGE */
             register pixel** pixarray;
             FILE *fp;
@@ -161,9 +163,9 @@ void *dispatcher(void *thread_id){
             unsigned char *buf;
             int frame_num = get_arg(msg);
             char location[50];
-	    sprintf(location, "%s%d%s", "support/images/sw", frame_num, ".ppm");
+            sprintf(location, "%s%d%s", "support/images/sw", frame_num, ".ppm");
 
-	    printf("%s\n", location);
+            printf("%s\n", location);
             if ((fp = fopen (location,"r")) == NULL) {
                 fprintf (stderr, "Can't open input file\n");
                 exit (1);
@@ -172,8 +174,31 @@ void *dispatcher(void *thread_id){
             buf = (unsigned char *)malloc (cols*rows*3);
             printf("COLS = %d, ROWS = %d\n", cols, rows);
 
-			write(wm[i].fd, &size, sizeof(size_t));
-			write(wm[i].fd, msg, strlen(msg));
+            // Send type
+            size_t len;
+            len = 1;
+            len = htonl(len);
+            write(wm[i].fd, &len, sizeof(size_t));
+            
+            // Send col
+            len = cols;
+            len = htonl(len);
+            write(wm[i].fd, &len, sizeof(size_t));
+            
+            // Send row
+            len = rows;
+            len = htonl(len);
+            write(wm[i].fd, &len, sizeof(size_t));
+            
+            // Send size
+            len = sizeof(pixarray);
+            len = htonl(len);
+            write(wm[i].fd, &len, sizeof(size_t));
+            
+            // Send image
+            write(wm[i].fd, &pixarray, sizeof(pixarray));
+            
+			//write(wm[i].fd, msg, strlen(msg));
 		}
 		pthread_mutex_unlock(&buff_mutex);
 	}
