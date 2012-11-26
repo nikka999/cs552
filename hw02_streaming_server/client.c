@@ -140,7 +140,7 @@ void *recv_listen(void *sd) {
     int rows = 120;
 
     unsigned char *buf;
-    
+
     Window window;
     Display *dpy;
     GLXContext cx;
@@ -156,22 +156,21 @@ void *recv_listen(void *sd) {
         // Read data_len
         read(fd, &data_len, sizeof(size_t));
         data_len=ntohl(data_len);
-        
+
         // Read pixarray
         buf = (unsigned char *)malloc(data_len);
-        
+
         int arg = (cols*rows*3)/5;
-        
+
         read(fd, (buf), arg);
-		read(fd, (buf+arg), arg);
-		read(fd, (buf+2*arg), arg);
-		read(fd, (buf+3*arg), arg);
-		read(fd, (buf+4*arg), arg);      
-	
+	read(fd, (buf+arg), arg);
+	read(fd, (buf+2*arg), arg);
+	read(fd, (buf+3*arg), arg);
+	read(fd, (buf+4*arg), arg);
+
         // printf("data_len=%d\n", data_len);
-        
-        make_window (160, 120, "Image Viewer", 1
-                     , &window, &cx, &dpy);
+
+        make_window (160, 120, "Image Viewer", 1 , &window, &cx, &dpy);
         glxMakeCurrent (dpy, window, cx);
         glMatrixMode (GL_PROJECTION);
         glOrtho (0, cols, 0, rows, -1, 1);
