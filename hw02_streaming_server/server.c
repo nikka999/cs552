@@ -71,7 +71,7 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		rc  = read (sd, data, buf_size);
 		if (rc != buf_size)
 			printf("rc not right: %d\n", rc);
-		printf ("Received string = %s, size is %lu, in thread %d\n", data, buf_size, tid);
+		printf ("Received string = %s, size is %lu, in thread %d\n", data, (unsigned long)buf_size, tid);
 		wm.thread_id = tid;
 		wm.fd = sd;
 		memset(wm.message, 0, MESSAGE_SIZE);													
