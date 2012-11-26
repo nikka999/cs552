@@ -13,8 +13,8 @@
 #include <netpbm/ppm.h>
 
 /** image methods */
-Display *dpy1, *dpy2, *dpy3;
-Window window1, window2, window3;
+Display *dpy, *dpy1, *dpy2, *dpy3;
+Window window, window1, window2, window3;
 GLXContext cx1, cx2, cx3;
 
 int START;
@@ -55,7 +55,7 @@ void noborder (Display *dpy, Window win) {
     free (hints);
 }
 
-static void make_window (int width, int height, char *name, int border) {
+static void make_window_seek (int width, int height, char *name, int border) {
     XVisualInfo *vi;
     Colormap cmap;
     XSetWindowAttributes swa;
@@ -90,7 +90,7 @@ static void make_window (int width, int height, char *name, int border) {
 }
 
 
-static void make_window_seek (int width, int height, char *name, int border,
+static void make_window (int width, int height, char *name, int border,
                          Window *window, GLXContext *cx, Display **dpy) {
     XVisualInfo *vi;
     XSetWindowAttributes swa;
@@ -201,7 +201,7 @@ void *recv_listen(void *sd) {
             read(fd, (buf+3*arg), arg);
             read(fd, (buf+4*arg), arg);
             
-            make_window_seek (cols, rows, "SEEK", border);
+            make_window_seek (cols, rows, "SEEK", 1);
             glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
             glMatrixMode (GL_PROJECTION);
             glOrtho (0, cols, 0, rows, -1, 1);
@@ -234,7 +234,7 @@ void *recv_listen(void *sd) {
                 }
             }
             glFlush();
-        } else if (START == 1 && type = 2) {
+        } else if (START == 1 && type == 2) {
             // If start
             make_window (160, 120, "Uncompressed Data Viewer1", 1,
                          &window1, &cx1, &dpy1);
@@ -286,7 +286,7 @@ void *recv_listen(void *sd) {
             }
 
             
-        } else if (STOP == 1 && type = 3){
+        } else if (STOP == 1 && type == 3){
             // do nothing.
         }
 	}
@@ -339,8 +339,8 @@ int command_line(int sd) {
 			}
 			if (!strcmp(args[0], "s")) {
 				if (!strcmp(args[1], "start")) {
-					if (i == 4)
-						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "start_movie", args[2]);
+					if (i == 3)
+						sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "start_movie", args[2]);
                     START = 1;
                     SEEK = 0;
                     STOP = 0;
@@ -359,7 +359,7 @@ int command_line(int sd) {
                     REPEAT = 0;
 				}
 				else if (!strcmp(args[1], "stop")) {
-					if (i == 3)
+					if (i == 2)
 						sprintf(msg, "%s:%d:%s", params.clientid, params.priority, "stop_movie");
                     START = 0;
                     SEEK = 0;
