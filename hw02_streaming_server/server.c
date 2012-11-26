@@ -78,7 +78,8 @@ void *do_work(void *thread_id) {
 		while (read(sd, &buf_size, sizeof(size_t)) > 0) {
 			// write protocol, first send buffer size through port, then send string itself
 			buf_size = ntohl(buf_size);
-			data = (char *)malloc(buf_size);
+			data = (char *)malloc(buf_size+1);
+			memset(data, 0, buf_size+1);																
 			rc  = read (sd, data, buf_size);
 			if (rc != buf_size)
 				printf("rc not right: %d\n", rc);
