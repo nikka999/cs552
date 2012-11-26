@@ -201,7 +201,7 @@ void *dispatcher(void *thread_id){
             write(wm[i].fd, &len, sizeof(size_t));
             
             // Send image
-            write(wm[i].fd, buf, cols*rows*3);
+            write(wm[i].fd, &buf, cols*rows*3);
             
 			//write(wm[i].fd, msg, strlen(msg));
 		}

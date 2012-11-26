@@ -136,64 +136,37 @@ void *recv_listen(void *sd) {
 	int fd = (int) sd;
 	size_t data_len;
     size_t type;
-    size_t cols;
-    size_t rows;
-    
-	char *data;
-    
+    int cols = 160;
+    int rows = 120;
+
     unsigned char *buf;
 
-    
 	while(1) {
         // Read type.
         read(fd, &type, sizeof(size_t));
         type = ntohl(type);
         // if seek
-        // Read col
-        read(fd, &cols, sizeof(size_t));
-        cols = ntohl(cols);
-        // Read row
-        read(fd, &rows, sizeof(size_t));
-        rows = ntohl(rows);
+
         // Read data_len
-	read(fd, &data_len, sizeof(size_t));
+        read(fd, &data_len, sizeof(size_t));
         data_len=ntohl(data_len);
+        
         // Read pixarray
         buf = (unsigned char *)malloc(data_len);
 		read(fd, buf, data_len);
-        printf("type=%d, col=%d, row=%d, data_len=%d\n",type, cols, rows, data_len);
+        printf("data_len=%d\n", data_len);
         
-        make_window (cols, rows, "-n", 1);
-        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+        make_window (160, 120, "Image Viewer", 1);
+        
         glMatrixMode (GL_PROJECTION);
         glOrtho (0, cols, 0, rows, -1, 1);
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
         glMatrixMode (GL_MODELVIEW);
         glRasterPos2i (0, 0);
-        while (1) {
-            XEvent ev;
-            XNextEvent (dpy, &ev);
-            switch (ev.type) {
-                case Expose:
-                    glClearColor (0.5, 0.5, 0.5, 0.5);
-                    glClear (GL_COLOR_BUFFER_BIT);
-                    glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
-                    break;
-                    
-                case KeyPress: {
-                    char buf2[100];
-                    int rv;
-                    KeySym ks;
-                    
-                    rv = XLookupString (&ev.xkey, buf2, sizeof(buf2), &ks, 0);
-                    switch (ks) {
-                        case XK_Escape:
-                            free (buf);
-                            exit(0);
-                    }
-                    break;
-                }
-            }
-        }
+
+        
+        glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+        
 	}
 }
 
