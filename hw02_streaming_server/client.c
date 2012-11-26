@@ -165,7 +165,31 @@ void *recv_listen(void *sd) {
         glRasterPos2i (0, 0);
 
         
-        glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+        while (1) {
+            XEvent ev;
+            XNextEvent (dpy, &ev);
+            switch (ev.type) {
+                case Expose:
+                    glClearColor (0.5, 0.5, 0.5, 0.5);
+                    glClear (GL_COLOR_BUFFER_BIT);
+                    glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+                    break;
+                    
+                case KeyPress: {
+                    char buf2[100];
+                    int rv;
+                    KeySym ks;
+                    
+                    rv = XLookupString (&ev.xkey, buf2, sizeof(buf2), &ks, 0);
+                    switch (ks) {
+                        case XK_Escape:
+                            free (buf);
+                            exit(0);
+                    }
+                    break;
+                }
+            }
+        }
         
 	}
 }
