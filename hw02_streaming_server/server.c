@@ -85,6 +85,7 @@ void *do_work(void *thread_id) {
 			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
+			memset(wm.message, 0, MESSAGE_SIZE);													
 			strncpy(wm.message, data, MESSAGE_SIZE);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 			free(data);			
