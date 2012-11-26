@@ -152,9 +152,6 @@ void *dispatcher(void *thread_id){
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
 			printf("dispatcher: msg is %s\n", msg);
 			
-	
-            
-            
             /** SENDING IMAGE */
             pixel** pixarray;
             FILE *fp;
@@ -162,6 +159,7 @@ void *dispatcher(void *thread_id){
             pixval maxval;
             unsigned char *buf;
             int frame_num = get_arg(msg);
+            int x, y;
             char location[50];
             sprintf(location, "%s%d%s", "support/images/sw", frame_num, ".ppm");
 
@@ -173,6 +171,13 @@ void *dispatcher(void *thread_id){
             pixarray = ppm_readppm (fp, &cols, &rows, &maxval);
             buf = (unsigned char *)malloc (cols*rows*3);
             printf("COLS = %d, ROWS = %d\n", cols, rows);
+            for (y = 0; y < rows; y++) {
+                for (x = 0; x < cols; x++) {
+                    buf[(y*cols+x)*3+0] = PPM_GETR(pixarray[rows-y-1][x]);
+                    buf[(y*cols+x)*3+1] = PPM_GETG(pixarray[rows-y-1][x]);
+                    buf[(y*cols+x)*3+2] = PPM_GETB(pixarray[rows-y-1][x]);
+                }
+            }
 
             // Send type
             size_t len;
