@@ -13,11 +13,17 @@
 #include <netpbm/ppm.h>
 
 /** image methods */
-Display *dpy;
-Window window;
+Display *dpy1, *dpy2, *dpy3;
+Window window1, window2, window3;
+GLXContext cx1, cx2, cx3;
 
-static void make_window (int width, int height, char *name, int border,
-                         Window *window, GLXContext *cx, Display **dpy);
+int START;
+int SEEK;
+int STOP;
+int REPEAT;
+
+static void make_window (int width, int height, char *name, int border, Window *window, GLXContext *cx, Display **dpy);
+static void make_window_seek (int width, int height, char *name, int border);
 static int attributeList[] = { GLX_RGBA, GLX_RED_SIZE, 1, None };
 
 void noborder (Display *dpy, Window win) {
@@ -49,8 +55,42 @@ void noborder (Display *dpy, Window win) {
     free (hints);
 }
 
+static void make_window (int width, int height, char *name, int border) {
+    XVisualInfo *vi;
+    Colormap cmap;
+    XSetWindowAttributes swa;
+    GLXContext cx;
+    XSizeHints sizehints;
+    
+    dpy = XOpenDisplay (0);
+    if (!(vi = glXChooseVisual (dpy, DefaultScreen(dpy), attributeList))) {
+        printf ("Can't find requested visual.\n");
+        exit (1);
+    }
+    cx = glXCreateContext (dpy, vi, 0, GL_TRUE);
+    
+    swa.colormap = XCreateColormap (dpy, RootWindow (dpy, vi->screen),
+                                    vi->visual, AllocNone);
+    sizehints.flags = 0;
+    
+    swa.border_pixel = 0;
+    swa.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask;
+    window = XCreateWindow (dpy, RootWindow (dpy, vi->screen),
+                            0, 0, width, height,
+                            0, vi->depth, InputOutput, vi->visual,
+                            CWBorderPixel|CWColormap|CWEventMask, &swa);
+    XMapWindow (dpy, window);
+    XSetStandardProperties (dpy, window, name, name,
+                            None, (void *)0, 0, &sizehints);
+    
+    if (!border) 
+        noborder (dpy, window);
+    
+    glXMakeCurrent (dpy, window, cx);
+}
 
-static void make_window (int width, int height, char *name, int border,
+
+static void make_window_seek (int width, int height, char *name, int border,
                          Window *window, GLXContext *cx, Display **dpy) {
     XVisualInfo *vi;
     XSetWindowAttributes swa;
@@ -140,74 +180,115 @@ void *recv_listen(void *sd) {
 
     unsigned char *buf;
 
-    Window window;
-    Display *dpy;
-    GLXContext cx;
-        make_window (160, 120, "Image Viewer", 1 , &window, &cx, &dpy);
-        glXMakeCurrent (dpy, window, cx);
-        glMatrixMode (GL_PROJECTION);
-        glOrtho (0, cols, 0, rows, -1, 1);
-        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-        glMatrixMode (GL_MODELVIEW);
-        glRasterPos2i (0, 0);
+    int arg = (cols*rows*3)/5;
 
 	while(1) {
         // Read type.
         // 1 = seek
-        // 2
+        // 2 = start
+        // 3 = stop
         read(fd, &type, sizeof(size_t));
         type = ntohl(type);
-        // if seek
-
-        // Read data_len
-        read(fd, &data_len, sizeof(size_t));
-        data_len=ntohl(data_len);
-
-        // Read pixarray
-        buf = (unsigned char *)malloc(data_len);
-
-        int arg = (cols*rows*3)/5;
-
-        read(fd, (buf), arg);
-	read(fd, (buf+arg), arg);
-	read(fd, (buf+2*arg), arg);
-	read(fd, (buf+3*arg), arg);
-	read(fd, (buf+4*arg), arg);
-
-        // printf("data_len=%d\n", data_len);
-
-        glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
-        glFlush ();
-        usleep(24100);
-        /**
         
-        while (1) {
-            XEvent ev;
-            XNextEvent (dpy, &ev);
-            switch (ev.type) {
-                case Expose:
-                    glClearColor (0.5, 0.5, 0.5, 0.5);
-                    glClear (GL_COLOR_BUFFER_BIT);
-                    glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
-                    break;
-                    
-                case KeyPress: {
-                    char buf2[100];
-                    int rv;
-                    KeySym ks;
-                    
-                    rv = XLookupString (&ev.xkey, buf2, sizeof(buf2), &ks, 0);
-                    switch (ks) {
-                        case XK_Escape:
-                            free (buf);
-                            exit(0);
+        // if seek
+        if (type == 1 && SEEK == 1) {
+            int exit = 0;
+            // Read pixarray
+            buf = (unsigned char *)malloc(arg*5);
+            read(fd, (buf), arg);
+            read(fd, (buf+arg), arg);
+            read(fd, (buf+2*arg), arg);
+            read(fd, (buf+3*arg), arg);
+            read(fd, (buf+4*arg), arg);
+            
+            make_window_seek (cols, rows, "SEEK", border);
+            glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+            glMatrixMode (GL_PROJECTION);
+            glOrtho (0, cols, 0, rows, -1, 1);
+            glMatrixMode (GL_MODELVIEW);
+            glRasterPos2i (0, 0);
+            
+            while (!exit) {
+                XEvent ev;
+                XNextEvent (dpy, &ev);
+                switch (ev.type) {
+                    case Expose:
+                        glClearColor (0.5, 0.5, 0.5, 0.5);
+                        glClear (GL_COLOR_BUFFER_BIT);
+                        glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+                        break;
+                        
+                    case KeyPress: {
+                        char buf2[100];
+                        int rv;
+                        KeySym ks;
+                        
+                        rv = XLookupString (&ev.xkey, buf2, sizeof(buf2), &ks, 0);
+                        switch (ks) {
+                            case XK_Escape:
+                                free (buf);
+                                exit = 1;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
+            glFlush();
+        } else if (START == 1 && type = 2) {
+            // If start
+            make_window (160, 120, "Uncompressed Data Viewer1", 1,
+                         &window1, &cx1, &dpy1);
+            make_window (160, 120, "Uncompressed Data Viewer2", 1,
+                         &window2, &cx2, &dpy2);
+            make_window (160, 120, "Uncompressed Data Viewer3", 1,
+                         &window3, &cx3, &dpy3);
+            
+            glXMakeCurrent (dpy1, window1, cx1);
+            glMatrixMode (GL_PROJECTION);
+            glOrtho (0, cols, 0, rows, -1, 1);
+            glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+            glMatrixMode (GL_MODELVIEW);
+            glRasterPos2i (0, 0);
+            
+            int frame_count = 1;
+            
+            while (!STOP) {
+                if ((!REPEAT) && (frame_count > 100)) {
+                    // if no repeat, break out.
+                    STOP = 1;
+                    continue;
+                }
+                // Read pixarray
+                buf = (unsigned char *)malloc(arg*5);
+                read(fd, (buf), arg);
+                read(fd, (buf+arg), arg);
+                read(fd, (buf+2*arg), arg);
+                read(fd, (buf+3*arg), arg);
+                read(fd, (buf+4*arg), arg);
+                
+                if ((frame_count % 2) == 0)
+                    glXMakeCurrent (dpy2, window2, cx2);
+                else
+                    if ((frame_count % 3) == 0)
+                        glXMakeCurrent (dpy3, window3, cx3);
+                    else
+                        glXMakeCurrent (dpy1, window1, cx1);
+                
+                glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+                glFlush ();
+                usleep(24100);
+                
+                read(fd, &type, sizeof(size_t));
+                type = ntohl(type);
+                if (type == 3) {
+                    STOP = 1;
+                }
+            }
+
+            
+        } else if (STOP == 1 && type = 3){
+            // do nothing.
         }
-         */
-        
 	}
 }
 
@@ -259,15 +340,31 @@ int command_line(int sd) {
 			if (!strcmp(args[0], "s")) {
 				if (!strcmp(args[1], "start")) {
 					if (i == 4)
-						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "start_movie", args[2], args[3]);
+						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "start_movie", args[2]);
+                    START = 1;
+                    SEEK = 0;
+                    STOP = 0;
+                    if (atoi(args[2]) == 1) {
+                        REPEAT = 1;
+                    } else {
+                        REPEAT = 0;
+                    }
 				}
 				else if (!strcmp(args[1], "seek")) {
 					if (i == 4)
 						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);
+                    START = 0;
+                    SEEK = 1;
+                    STOP = 0;
+                    REPEAT = 0;
 				}
 				else if (!strcmp(args[1], "stop")) {
 					if (i == 3)
-						sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "stop_movie", args[2]);
+						sprintf(msg, "%s:%d:%s", params.clientid, params.priority, "stop_movie");
+                    START = 0;
+                    SEEK = 0;
+                    STOP = 1;
+                    REPEAT = 0;
 				}
 				if (*msg != '\0') {
 					len = strlen(msg);
@@ -276,7 +373,6 @@ int command_line(int sd) {
 					printf("the msg is: %s\n", msg);
 					write(sd, msg, strlen(msg));
 					memset(msg, 0, 50);
-
 				}
 			}
 			else if(!strcmp(args[0], "q")) {
@@ -292,6 +388,13 @@ int main (int argc, char const *argv[])
 	int rc;
 	// char buffer[20], msg[50];
 	pthread_t listener;
+    
+    // INIT flags. 
+    START = 0;
+    SEEK = 0;
+    STOP = 0;
+    REPEAT = 0;
+    
 	char *req = "stop_movie:batman";
 	rc = parse_args(argc, argv, &params);
 	if (rc) exit(0);
