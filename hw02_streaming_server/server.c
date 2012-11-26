@@ -60,6 +60,28 @@ int parse_args(int argc, char const **argv, Params *p) {
 	return 0;
 }
 
+int thread_work(int sd, int tid, size_t buf_size, char* data) {
+	int rc;
+	worker_message wm;
+	while (read(sd, &buf_size, sizeof(size_t)) > 0) {
+		// write protocol, first send buffer size through port, then send string itself
+		buf_size = ntohl(buf_size);
+		data = (char *)malloc(buf_size+1);
+		memset(data, 0, buf_size+1);																
+		rc  = read (sd, data, buf_size);
+		if (rc != buf_size)
+			printf("rc not right: %d\n", rc);
+		printf ("Received string = %s, size is %lu, in thread %d\n", data, buf_size, tid);
+		wm.thread_id = tid;
+		wm.fd = sd;
+		memset(wm.message, 0, MESSAGE_SIZE);													
+		strncpy(wm.message, data, MESSAGE_SIZE);
+		while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+		free(data);			
+	}
+	printf("Client Disconnected\n");
+}
+
 void *do_work(void *thread_id) {
 	int tid = (int)thread_id;
 	int sd, rc;
@@ -75,23 +97,7 @@ void *do_work(void *thread_id) {
 		GloSocket = 0;
 		ActiveThreads++;
 		pthread_mutex_unlock(&conn_mutex);
-		while (read(sd, &buf_size, sizeof(size_t)) > 0) {
-			// write protocol, first send buffer size through port, then send string itself
-			buf_size = ntohl(buf_size);
-			data = (char *)malloc(buf_size+1);
-			memset(data, 0, buf_size+1);																
-			rc  = read (sd, data, buf_size);
-			if (rc != buf_size)
-				printf("rc not right: %d\n", rc);
-			printf ("Received string = %s, size is %lu, in thread %d\n", data, buf_size, tid);
-			wm.thread_id = tid;
-			wm.fd = sd;
-			memset(wm.message, 0, MESSAGE_SIZE);													
-			strncpy(wm.message, data, MESSAGE_SIZE);
-			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
-			free(data);			
-		}
-		printf("Client Disconnected\n");
+		rc = thread_work(sd, tid, buf_size, data);
 		pthread_mutex_lock(&conn_mutex);
 		ActiveThreads--;
 		pthread_mutex_unlock(&conn_mutex);
@@ -160,21 +166,7 @@ void *overflow_work(void *thread_id){
 		else
 			pthread_exit(NULL);
 		pthread_mutex_unlock(&conn_mutex);
-		while (read(sd, &buf_size, sizeof(size_t)) > 0) {
-			// write protocol, first send buffer size through port, then send string itself
-			buf_size = ntohl(buf_size);
-			data = (char *)malloc(buf_size);
-			rc  = read (sd, data, buf_size);
-			if (rc != buf_size)
-				printf("rc not right: %d\n", rc);
-			printf ("Received string = %s, size is %lu, in thread %d\n", data, buf_size, tid);
-			wm.thread_id = tid;
-			wm.fd = sd;
-			strncpy(wm.message, data, MESSAGE_SIZE);			
-			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
-			free(data);			
-		}
-		printf("Client Disconnected\n");
+		rc = thread_work(sd, tid, buf_size, data);				
 		//close sd might not be good idea since old sd can be reused...
 		close(sd);
 		pthread_exit(NULL);

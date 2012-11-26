@@ -45,3 +45,4 @@ void *overflow_work(void *thread_id);
 void intHandler(int sig);
 int compare_messages(const void *a, const void *b);
 int wm_2_int(const void *a);
+int thread_work(int sd, int tid, size_t buf_size, char* data);
