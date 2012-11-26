@@ -155,35 +155,15 @@ void *recv_listen(void *sd) {
         buf = (unsigned char *)malloc(data_len);
         
         int arg = (cols*rows*3)/5;
-/**
-            unsigned char *first = malloc(arg * sizeof(unsigned char));
-            unsigned char *second = malloc(arg * sizeof(unsigned char));
-            unsigned char *third = malloc(arg * sizeof(unsigned char));
-*/
-        	read(fd, (buf), arg);
+        
+        read(fd, (buf), arg);
 		read(fd, (buf+arg), arg);
 		read(fd, (buf+2*arg), arg);
 		read(fd, (buf+3*arg), arg);
-		read(fd, (buf+4*arg), arg);
-
-/**
-	    memcpy(buf, first, arg);
-	    memcpy((buf+arg), second, arg);
-            memcpy((buf+2*arg), third, arg);
-
-int i =0;
-	        for (i; i < (cols*rows); i++) {
-	printf("%d,", first[i]);
-}
-*/        
+		read(fd, (buf+4*arg), arg);      
 	
         printf("data_len=%d\n", data_len);
-        /**
-        int i =0;
-        for (i; i < (cols*rows*3); i++) {
-            printf("%d,", buf[i]);
-        }  
-         */
+        
         make_window (160, 120, "Image Viewer", 1);
         
         glMatrixMode (GL_PROJECTION);

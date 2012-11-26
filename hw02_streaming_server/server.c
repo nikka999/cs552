@@ -61,6 +61,7 @@ int parse_args(int argc, char const **argv, Params *p) {
 	return 0;
 }
 
+
 void *do_work(void *thread_id) {
 	int tid = (int)thread_id;
 	int sd, rc;
@@ -192,37 +193,15 @@ void *dispatcher(void *thread_id){
             len = htonl(len);
             write(wm[i].fd, &len, sizeof(size_t));
             
-            // Parse image into 3 packets.
+            // Parse image into 5 packets.
             int arg = (cols*rows*3)/5;
-/**
-            unsigned char *first = malloc(arg * sizeof(unsigned char));
-            unsigned char *second = malloc(arg * sizeof(unsigned char));
-            unsigned char *third = malloc(arg * sizeof(unsigned char));
-            memcpy(first, buf, arg);
-	    memcpy(second, (buf+arg), arg);
-            memcpy(third, (buf+2*arg), arg);
-*/
-/**
-	int i =0;
-	for (i; i < arg; i++) {
-	printf("%d,", first[i]);
-	}
-*/
             
             // Send image
             write(wm[i].fd, (buf), arg);
             write(wm[i].fd, (buf + arg), arg);
             write(wm[i].fd, (buf + 2*arg), arg);
             write(wm[i].fd, (buf + 3*arg), arg);
-	    write(wm[i].fd, (buf + 4*arg), arg);
-            /**
-            int i =0;
-            for (i; i < (cols*rows*3); i++) {
-                printf("%d,", buf[i]);
-            }
-             */
-            
-			//write(wm[i].fd, msg, strlen(msg));
+            write(wm[i].fd, (buf + 4*arg), arg);
 		}
 		pthread_mutex_unlock(&buff_mutex);
 	}
