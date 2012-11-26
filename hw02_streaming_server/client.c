@@ -140,9 +140,15 @@ void *recv_listen(void *sd) {
     int rows = 120;
 
     unsigned char *buf;
+    
+    Window window;
+    Display *dpy;
+    GLXContext cx;
 
 	while(1) {
         // Read type.
+        // 1 = seek
+        // 2
         read(fd, &type, sizeof(size_t));
         type = ntohl(type);
         // if seek
@@ -162,16 +168,21 @@ void *recv_listen(void *sd) {
 		read(fd, (buf+3*arg), arg);
 		read(fd, (buf+4*arg), arg);      
 	
-        printf("data_len=%d\n", data_len);
+        // printf("data_len=%d\n", data_len);
         
-        make_window (160, 120, "Image Viewer", 1);
-        
+        make_window (160, 120, "Image Viewer", 1
+                     , &window, &cx, &dpy);
+        glxMakeCurrent (dpy, window, cx);
         glMatrixMode (GL_PROJECTION);
         glOrtho (0, cols, 0, rows, -1, 1);
         glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
         glMatrixMode (GL_MODELVIEW);
         glRasterPos2i (0, 0);
 
+        glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+        glFlush ();
+        usleep(24100);
+        /**
         
         while (1) {
             XEvent ev;
@@ -198,6 +209,7 @@ void *recv_listen(void *sd) {
                 }
             }
         }
+         */
         
 	}
 }
