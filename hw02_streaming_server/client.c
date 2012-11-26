@@ -142,9 +142,7 @@ void *recv_listen(void *sd) {
 	char *data;
     
     unsigned char *buf;
-    FILE *fp;
-    int cols, rows;
-    pixval maxval;
+
     
 	while(1) {
         // Read type.
@@ -164,6 +162,38 @@ void *recv_listen(void *sd) {
         buf = (unsigned char *)malloc(data_len);
 		read(fd, buf, data_len);
         printf("type=%d, col=%d, row=%d, data_len=%d\n",type, col, row, data_len);
+        
+        make_window (cols, rows, argv[1], border);
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+        glMatrixMode (GL_PROJECTION);
+        glOrtho (0, cols, 0, rows, -1, 1);
+        glMatrixMode (GL_MODELVIEW);
+        glRasterPos2i (0, 0);
+        while (1) {
+            XEvent ev;
+            XNextEvent (dpy, &ev);
+            switch (ev.type) {
+                case Expose:
+                    glClearColor (0.5, 0.5, 0.5, 0.5);
+                    glClear (GL_COLOR_BUFFER_BIT);
+                    glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
+                    break;
+                    
+                case KeyPress: {
+                    char buf2[100];
+                    int rv;
+                    KeySym ks;
+                    
+                    rv = XLookupString (&ev.xkey, buf2, sizeof(buf2), &ks, 0);
+                    switch (ks) {
+                        case XK_Escape:
+                            free (buf);
+                            exit(0);
+                    }
+                    break;
+                }
+            }
+        }
 	}
 }
 
