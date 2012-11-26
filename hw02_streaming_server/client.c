@@ -154,19 +154,28 @@ void *recv_listen(void *sd) {
         // Read pixarray
         buf = (unsigned char *)malloc(data_len);
         
-        int arg = cols*rows;
-        unsigned char first[arg];
-        unsigned char second[arg];
-        unsigned char third[arg];
-        read(fd, first, arg);
-        read(fd, second, arg);
-        read(fd, third, arg);
-        strncpy(buf, first, arg);
-        strncpy((buf + arg), second, arg);
-        strncpy((buf + arg + arg), third, arg);
+        int arg = (cols*rows*3)/5;
+/**
+            unsigned char *first = malloc(arg * sizeof(unsigned char));
+            unsigned char *second = malloc(arg * sizeof(unsigned char));
+            unsigned char *third = malloc(arg * sizeof(unsigned char));
+*/
+        	read(fd, (buf), arg);
+		read(fd, (buf+arg), arg);
+		read(fd, (buf+2*arg), arg);
+		read(fd, (buf+3*arg), arg);
+		read(fd, (buf+4*arg), arg);
 
-		
-        
+/**
+	    memcpy(buf, first, arg);
+	    memcpy((buf+arg), second, arg);
+            memcpy((buf+2*arg), third, arg);
+
+int i =0;
+	        for (i; i < (cols*rows); i++) {
+	printf("%d,", first[i]);
+}
+*/        
 	
         printf("data_len=%d\n", data_len);
         /**

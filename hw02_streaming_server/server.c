@@ -193,19 +193,28 @@ void *dispatcher(void *thread_id){
             write(wm[i].fd, &len, sizeof(size_t));
             
             // Parse image into 3 packets.
-            int arg = cols*rows;
-            unsigned char first[arg];
-            unsigned char second[arg];
-            unsigned char third[arg];
-            strncpy(first, buf, arg);
-            strncpy(second, (buf + arg), arg);
-            strncpy(third, (buf + arg + arg), arg);
+            int arg = (cols*rows*3)/5;
+/**
+            unsigned char *first = malloc(arg * sizeof(unsigned char));
+            unsigned char *second = malloc(arg * sizeof(unsigned char));
+            unsigned char *third = malloc(arg * sizeof(unsigned char));
+            memcpy(first, buf, arg);
+	    memcpy(second, (buf+arg), arg);
+            memcpy(third, (buf+2*arg), arg);
+*/
+/**
+	int i =0;
+	for (i; i < arg; i++) {
+	printf("%d,", first[i]);
+	}
+*/
             
             // Send image
-            write(wm[i].fd, first, arg);
-            write(wm[i].fd, second, arg);
-            write(wm[i].fd, third, arg);
-            
+            write(wm[i].fd, (buf), arg);
+            write(wm[i].fd, (buf + arg), arg);
+            write(wm[i].fd, (buf + 2*arg), arg);
+            write(wm[i].fd, (buf + 3*arg), arg);
+	    write(wm[i].fd, (buf + 4*arg), arg);
             /**
             int i =0;
             for (i; i < (cols*rows*3); i++) {
