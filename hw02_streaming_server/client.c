@@ -16,7 +16,8 @@
 Display *dpy;
 Window window;
 
-static void make_window (int width, int height, char *name, int border);
+static void make_window (int width, int height, char *name, int border,
+                         Window *window, GLXContext *cx, Display **dpy);
 static int attributeList[] = { GLX_RGBA, GLX_RED_SIZE, 1, None };
 
 void noborder (Display *dpy, Window win) {
@@ -49,38 +50,36 @@ void noborder (Display *dpy, Window win) {
 }
 
 
-static void make_window (int width, int height, char *name, int border) {
+static void make_window (int width, int height, char *name, int border,
+                         Window *window, GLXContext *cx, Display **dpy) {
     XVisualInfo *vi;
-    Colormap cmap;
     XSetWindowAttributes swa;
-    GLXContext cx;
     XSizeHints sizehints;
     
-    dpy = XOpenDisplay (0);
-    if (!(vi = glXChooseVisual (dpy, DefaultScreen(dpy), attributeList))) {
+    *dpy = XOpenDisplay (0);
+    if (!(vi = glXChooseVisual (*dpy, DefaultScreen(*dpy), attributeList))) {
         printf ("Can't find requested visual.\n");
         exit (1);
     }
-    cx = glXCreateContext (dpy, vi, 0, GL_TRUE);
+    *cx = glXCreateContext (*dpy, vi, 0, GL_TRUE);
     
-    swa.colormap = XCreateColormap (dpy, RootWindow (dpy, vi->screen),
+    swa.colormap = XCreateColormap (*dpy, RootWindow (*dpy, vi->screen),
                                     vi->visual, AllocNone);
     sizehints.flags = 0;
     
     swa.border_pixel = 0;
     swa.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask;
-    window = XCreateWindow (dpy, RootWindow (dpy, vi->screen),
-                            0, 0, width, height,
-                            0, vi->depth, InputOutput, vi->visual,
-                            CWBorderPixel|CWColormap|CWEventMask, &swa);
-    XMapWindow (dpy, window);
-    XSetStandardProperties (dpy, window, name, name,
+    *window = XCreateWindow (*dpy, RootWindow (*dpy, vi->screen),
+                             0, 0, width, height,
+                             0, vi->depth, InputOutput, vi->visual,
+                             CWBorderPixel|CWColormap|CWEventMask, &swa);
+    XMapWindow (*dpy, *window);
+    XSetStandardProperties (*dpy, *window, name, name,
                             None, (void *)0, 0, &sizehints);
     
     if (!border) 
-        noborder (dpy, window);
+        noborder (*dpy, *window);
     
-    glXMakeCurrent (dpy, window, cx);
 }
 /** EOF image */
 
