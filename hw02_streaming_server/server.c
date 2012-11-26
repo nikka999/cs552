@@ -185,16 +185,6 @@ void *dispatcher(void *thread_id){
             len = htonl(len);
             write(wm[i].fd, &len, sizeof(size_t));
             
-            // Send col
-            len = cols;
-            len = htonl(len);
-            write(wm[i].fd, &len, sizeof(size_t));
-            
-            // Send row
-            len = rows;
-            len = htonl(len);
-            write(wm[i].fd, &len, sizeof(size_t));
-            
             // Send size
             len = (cols*rows*3);
             len = htonl(len);
