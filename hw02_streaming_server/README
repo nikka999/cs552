@@ -1,0 +1,9 @@
+Nikka Ghalili and Mao-Chi Weng
+
+to send messages after connection do:
+
+s "command" "args" 
+command = {start, seek, stop}
+
+ie:
+s start batman 3
