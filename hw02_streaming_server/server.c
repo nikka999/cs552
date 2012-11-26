@@ -83,7 +83,7 @@ void *do_work(void *thread_id) {
 			rc  = read (sd, data, buf_size);
 			if (rc != buf_size)
 				printf("rc not right: %d\n", rc);
-			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
+			printf ("Received string = %s, size is %lu, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
 			memset(wm.message, 0, MESSAGE_SIZE);													
@@ -167,7 +167,7 @@ void *overflow_work(void *thread_id){
 			rc  = read (sd, data, buf_size);
 			if (rc != buf_size)
 				printf("rc not right: %d\n", rc);
-			printf ("Received string = %s, size is %ld, in thread %d\n", data, buf_size, tid);
+			printf ("Received string = %s, size is %lu, in thread %d\n", data, buf_size, tid);
 			wm.thread_id = tid;
 			wm.fd = sd;
 			strncpy(wm.message, data, MESSAGE_SIZE);			
