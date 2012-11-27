@@ -221,11 +221,6 @@ void *dispatcher(void *thread_id){
             len = htonl(len);
             write(wm[i].fd, &len, sizeof(size_t));
             
-            // Send size
-            len = (cols*rows*3);
-            len = htonl(len);
-            write(wm[i].fd, &len, sizeof(size_t));
-            
             // Parse image into 5 packets.
             int arg = (cols*rows*3)/5;
             
