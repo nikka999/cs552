@@ -61,9 +61,32 @@ int parse_args(int argc, char const **argv, Params *p) {
 	return 0;
 }
 
+void *start_movie(void *vargs) {
+	worker_message *wm = (worker_message *)vargs;
+	int i, j;
+	char *args[5];
+	get_start_args(wm->message, args);
+	int repeat = atoi(args[4]);
+	for (i = 0; i < repeat+1; i++) {
+		for (j = 1; j < 101; j++) {
+			sprintf(wm->message, "%s:%s:%s:%s:%d", args[0], args[1], "play_movie", args[3], j);
+			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+		}
+	}		
+}
+
+void get_start_args(char *input, char *args[]) {
+	int i;
+	args[0] = strtok(input, ":");
+	for (i = 1; i < 5; i++) {
+		args[i] = strtok(NULL, ":");	
+	}
+}
+
 int thread_work(int sd, int tid, size_t buf_size, char* data) {
 	int rc;
 	worker_message wm;
+	char *args[5];
 	while (read(sd, &buf_size, sizeof(size_t)) > 0) {
 		// write protocol, first send buffer size through port, then send string itself
 		buf_size = ntohl(buf_size);
@@ -78,6 +101,11 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		memset(wm.message, 0, MESSAGE_SIZE);													
 		strncpy(wm.message, data, MESSAGE_SIZE);
 		while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+		// if arg = start_movie
+		pthread_t push_thread;
+		pthread_create(&push_thread, NULL, start_movie, (void *)args);
+		// if arg = stop_movie
+		pthread_cancel(&push_thread);
 		free(data);			
 	}
 	printf("Client Disconnected\n");
