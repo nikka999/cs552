@@ -184,14 +184,14 @@ void *recv_listen(void *sd) {
 
 	while(1) {
         // Read type.
-        // 1 = seek
-        // 2 = start
+        // 2 = seek
+        // 1 = start
         // 3 = stop
         read(fd, &type, sizeof(size_t));
         type = ntohl(type);
         
         // if seek
-        if (type == 1 && SEEK == 1) {
+        if (type == 2 && SEEK == 1) {
             int exit = 0;
             // Read pixarray
             buf = (unsigned char *)malloc(arg*5);
@@ -234,7 +234,7 @@ void *recv_listen(void *sd) {
                 }
             }
             glFlush();
-        } else if (START == 1 && type == 2) {
+        } else if (START == 1 && type == 1) {
             // If start
             make_window (160, 120, "Uncompressed Data Viewer1", 1,
                          &window1, &cx1, &dpy1);

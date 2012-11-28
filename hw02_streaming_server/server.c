@@ -69,7 +69,7 @@ void *start_movie(void *vargs) {
 	int repeat = atoi(args[4]);
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
-			sprintf(wm->message, "%s:%s:%s:%s:%d", args[0], args[1], "play_movie", args[3], j);
+			sprintf(wm->message, "%s:%s:%s:%s:%d", args[0], args[1], "start_movie", args[3], j);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 		}
 	}
@@ -243,12 +243,31 @@ void *dispatcher(void *thread_id){
             }
             
             ppm_freearray(pixarray, rows);
-
-            // Send type
-            size_t len;
-            len = 1;
-            len = htonl(len);
-            write(wm[i].fd, &len, sizeof(size_t));
+            
+            if ((get_arg_type(data)) == 1) {
+                // start
+                // Send type
+                size_t len;
+                len = 1;
+                len = htonl(len);
+                write(wm[i].fd, &len, sizeof(size_t));
+                
+            } else if ((get_arg_type(data)) == 2) {
+                // seek
+                // Send type
+                size_t len;
+                len = 2;
+                len = htonl(len);
+                write(wm[i].fd, &len, sizeof(size_t));
+                
+            } else if ((get_arg_type(data)) == 3) {
+                // stop
+                // Send type
+                size_t len;
+                len = 3;
+                len = htonl(len);
+                write(wm[i].fd, &len, sizeof(size_t));
+            }
             
             // Parse image into 5 packets.
             int arg = (cols*rows*3)/5;
