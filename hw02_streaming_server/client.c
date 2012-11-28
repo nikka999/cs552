@@ -345,6 +345,7 @@ int command_line(int sd) {
                     SEEK = 0;
                     STOP = 0;
                     REPEAT = atoi(args[3]);
+		    printf ("%d\n", REPEAT);
                 }
 				else if (!strcmp(args[1], "seek")) {
 					if (i == 4)
