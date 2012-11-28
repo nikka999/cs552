@@ -72,7 +72,8 @@ void *start_movie(void *vargs) {
 			sprintf(wm->message, "%s:%s:%s:%s:%d", args[0], args[1], "play_movie", args[3], j);
 			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 		}
-	}		
+	}
+    pthread_exit(NULL);
 }
 
 void get_start_args(char *input, char *args[]) {
@@ -81,6 +82,27 @@ void get_start_args(char *input, char *args[]) {
 	for (i = 1; i < 5; i++) {
 		args[i] = strtok(NULL, ":");	
 	}
+}
+
+int get_arg_type(char *msg) {
+    char *first = strchr(msg, ':');
+    printf("%s\n", first);
+    char *second = strchr(first+1, ':');
+    printf("%s\n", second);
+    if (second[1] == 's' && second[2] == 't' && second[3] == 'a'){
+        printf("start\n");
+        return 1;
+    }
+    if (second[1] == 's' && second[2] == 'e'){
+        printf("seek\n");
+        return 2;
+    }
+    
+    if (second[1] == 's' && second[2] == 't' && second[3] == 'o'){
+        printf("stop\n");
+        return 3;
+    }
+    return -1;
 }
 
 int thread_work(int sd, int tid, size_t buf_size, char* data) {
@@ -100,13 +122,20 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		wm.fd = sd;
 		memset(wm.message, 0, MESSAGE_SIZE);													
 		strncpy(wm.message, data, MESSAGE_SIZE);
-		while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
-		// if arg = start_movie
-		pthread_t push_thread;
-		pthread_create(&push_thread, NULL, start_movie, (void *)args);
-		// if arg = stop_movie
-		pthread_cancel(&push_thread);
-		free(data);			
+
+		if ((get_arg_type(data)) == 1) {
+            // if arg = start_movie
+            pthread_t push_thread;
+            pthread_create(&push_thread, NULL, start_movie, (void *)args);
+		} else if ((get_arg_type(data)) == 2) {
+            // seek
+            while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+        } else if ((get_arg_type(data)) == 3) {
+            // if arg = stop_movie
+            pthread_cancel(&push_thread);
+		}
+        
+        free(data);
 	}
 	printf("Client Disconnected\n");
 }
