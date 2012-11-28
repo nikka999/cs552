@@ -94,7 +94,7 @@ void *start_movie(void *vargs) {
     arg = get_msg_without_repeat(wm->message);
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
-			sprintf(wm->message, "%s:%d", arg, j);
+			sprintf(wm->message, "%s:%d", j);
 		printf("%s\n", wm->message);		
 	while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 		}
