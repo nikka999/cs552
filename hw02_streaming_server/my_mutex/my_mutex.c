@@ -4,14 +4,14 @@
 
 static int __init init_mutex(void)
 {
-	printk(KERN_ALERT "Hello world 1.\n");
+	printk("Hello world 1.\n");
 
 	return 0;
 }
 
 static void __exit mutex_cleanup(void)
 {
-	printk(KERN_ALERT "Goodbye world 1.\n");
+	printk("Goodbye world 1.\n");
 }
 
 
