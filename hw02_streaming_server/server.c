@@ -89,9 +89,9 @@ void *start_movie(void *vargs) {
 	worker_message *wm = (worker_message *)vargs;
 	int i, j;
     // get number of repeat
-    int repeat = atoi(get_arg(wm->message));
+    int repeat = get_arg(wm->message);
     char *arg;
-    arg = get_msg_without_repeat(msg);
+    arg = get_msg_without_repeat(wm->message);
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
 			sprintf(wm->message, "%s:%d", arg, j);
