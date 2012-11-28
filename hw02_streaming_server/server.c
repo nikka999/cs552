@@ -61,25 +61,40 @@ int parse_args(int argc, char const **argv, Params *p) {
 	return 0;
 }
 
-void get_start_args(char *input, char *args[]) {
-	int i;
-	args[0] = strtok(input, ":");
-	for (i = 1; i < 5; i++) {
-		args[i] = strtok(NULL, ":");
-	}
+char* get_msg_without_repeat(char *msg) {
+    char *repeat;
+    repeat = strrchr(msg, ':');
+    char *ret;
+    ret = (char *)malloc(repeat-msg+1);
+    strncpy(ret, msg, repeat-msg);
+    ret[repeat-msg]='\0';
+    //printf("%s\n", ret);
+    return ret;
+}
+
+int get_arg(char msg[]) {
+    int delim = ':';
+    char * ptr;
+    ptr = strrchr(msg, delim);
+    // printf("%s, len=%d\n", ptr, strlen(ptr));
+    char t[(strlen(ptr))];
+	// get rid of first char=":"
+    strncpy(t, (ptr + 1), (strlen(ptr)-1));
+    t[strlen(ptr)-1] = '\0';
+    int result = atoi(t);
+    return result;
 }
 
 void *start_movie(void *vargs) {
 	worker_message *wm = (worker_message *)vargs;
 	int i, j;
-	char *args[5];
-	printf("get start args\n");
-	get_start_args(wm->message, args);
-	printf("exit get start args");
-	int repeat = atoi(args[4]);
+    // get number of repeat
+    int repeat = atoi(get_arg(wm->message));
+    char *arg;
+    arg = get_msg_without_repeat(msg);
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
-			sprintf(wm->message, "%s:%s:%s:%s:%d", args[0], args[1], "start_movie", args[3], j);
+			sprintf(wm->message, "%s:%d", arg, j);
 		printf("%s\n", wm->message);		
 	while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 		}
@@ -124,19 +139,15 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		printf ("Received string = %s, size is %lu, in thread %d\n", data, (unsigned long)buf_size, tid);
 		wm.thread_id = tid;
 		wm.fd = sd;
-		memset(wm.message, 0, MESSAGE_SIZE);													
+		memset(wm.message, 0, MESSAGE_SIZE);
 		strncpy(wm.message, data, MESSAGE_SIZE);
-
         pthread_t push_thread;
         int type;
         type = get_arg_type(data);
-
 		if (type == 1) {
             // if arg = start_movie
-
             pthread_create(&push_thread, NULL, start_movie, (void *)args);
-printf("end pthread create for start movie");
-	} else if (type == 2) {
+        } else if (type == 2) {
             // seek
             while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
         } else if (type == 3) {
@@ -199,18 +210,7 @@ int compare_messages(const void *a, const void *b) {
 	return ib - ia;
 }
 
-int get_arg(char msg[]) {
-    int delim = ':';
-    char * ptr;
-    ptr = strrchr(msg, delim);
-    //printf("%s, len=%d\n", ptr, strlen(ptr));
-    char t[(strlen(ptr))];
-	// get rid of first char=":"
-    strncpy(t, (ptr + 1), (strlen(ptr)-1));
-    t[strlen(ptr)-1] = '\0';
-    int result = atoi(t);
-    return result;
-}
+
 
 void *dispatcher(void *thread_id){
 	worker_message wm[START_DISPATCH], buff_wm;
@@ -233,10 +233,8 @@ void *dispatcher(void *thread_id){
             int cols, rows;
             pixval maxval;
             unsigned char *buf;
-
             int frame_num = get_arg(msg);
-        
-	int x, y;
+            int x, y;
             char location[50];
             sprintf(location, "%s%d%s", "support/images/sw", frame_num, ".ppm");
 
