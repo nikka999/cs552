@@ -136,7 +136,9 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
             while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
         } else if (type == 3) {
             // if arg = stop_movie
-            pthread_cancel(&push_thread);
+            pthread_cancel(push_thread);
+            while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+            // push stop_movie on to the buffer
 		}
         
         free(data);
