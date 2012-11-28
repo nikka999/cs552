@@ -339,17 +339,13 @@ int command_line(int sd) {
 			}
 			if (!strcmp(args[0], "s")) {
 				if (!strcmp(args[1], "start")) {
-					if (i == 3)
-						sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "start_movie", args[2]);
+					if (i == 4)
+						sprintf(msg, "%s:%d:%s:%s", params.clientid, params.priority, "start_movie", args[2], args[3]);
                     START = 1;
                     SEEK = 0;
                     STOP = 0;
-                    if (atoi(args[2]) == 1) {
-                        REPEAT = 1;
-                    } else {
-                        REPEAT = 0;
-                    }
-				}
+                    REPEAT = atoi(args[3]);
+                }
 				else if (!strcmp(args[1], "seek")) {
 					if (i == 4)
 						sprintf(msg, "%s:%d:%s:%s:%s", params.clientid, params.priority, "seek_movie", args[2], args[3]);
