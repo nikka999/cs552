@@ -73,12 +73,15 @@ void *start_movie(void *vargs) {
 	worker_message *wm = (worker_message *)vargs;
 	int i, j;
 	char *args[5];
+	printf("get start args\n");
 	get_start_args(wm->message, args);
+	printf("exit get start args");
 	int repeat = atoi(args[4]);
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
 			sprintf(wm->message, "%s:%s:%s:%s:%d", args[0], args[1], "start_movie", args[3], j);
-			while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+		printf("%s\n", wm->message);		
+	while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 		}
 	}
     pthread_exit(NULL);
@@ -87,20 +90,20 @@ void *start_movie(void *vargs) {
 
 int get_arg_type(char *msg) {
     char *first = strchr(msg, ':');
-    printf("%s\n", first);
+    //printf("%s\n", first);
     char *second = strchr(first+1, ':');
-    printf("%s\n", second);
+    //printf("%s\n", second);
     if (second[1] == 's' && second[2] == 't' && second[3] == 'a'){
-        printf("start\n");
+        //printf("start\n");
         return 1;
     }
     if (second[1] == 's' && second[2] == 'e'){
-        printf("seek\n");
+        //printf("seek\n");
         return 2;
     }
     
     if (second[1] == 's' && second[2] == 't' && second[3] == 'o'){
-        printf("stop\n");
+        //printf("stop\n");
         return 3;
     }
     return -1;
@@ -127,11 +130,13 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
         pthread_t push_thread;
         int type;
         type = get_arg_type(data);
+
 		if (type == 1) {
             // if arg = start_movie
-            
+
             pthread_create(&push_thread, NULL, start_movie, (void *)args);
-		} else if (type == 2) {
+printf("end pthread create for start movie");
+	} else if (type == 2) {
             // seek
             while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
         } else if (type == 3) {
@@ -212,6 +217,7 @@ void *dispatcher(void *thread_id){
 	char msg[40];
 	size_t size = 0;
 	int i, priority;
+	
 	while(1) {
 		while(cb_count(&GloBuff) < START_DISPATCH);
 		pthread_mutex_lock(&buff_mutex);
@@ -227,8 +233,10 @@ void *dispatcher(void *thread_id){
             int cols, rows;
             pixval maxval;
             unsigned char *buf;
+
             int frame_num = get_arg(msg);
-            int x, y;
+        
+	int x, y;
             char location[50];
             sprintf(location, "%s%d%s", "support/images/sw", frame_num, ".ppm");
 
