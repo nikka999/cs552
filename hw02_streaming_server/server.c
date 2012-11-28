@@ -61,6 +61,14 @@ int parse_args(int argc, char const **argv, Params *p) {
 	return 0;
 }
 
+void get_start_args(char *input, char *args[]) {
+	int i;
+	args[0] = strtok(input, ":");
+	for (i = 1; i < 5; i++) {
+		args[i] = strtok(NULL, ":");
+	}
+}
+
 void *start_movie(void *vargs) {
 	worker_message *wm = (worker_message *)vargs;
 	int i, j;
@@ -76,13 +84,6 @@ void *start_movie(void *vargs) {
     pthread_exit(NULL);
 }
 
-void get_start_args(char *input, char *args[]) {
-	int i;
-	args[0] = strtok(input, ":");
-	for (i = 1; i < 5; i++) {
-		args[i] = strtok(NULL, ":");	
-	}
-}
 
 int get_arg_type(char *msg) {
     char *first = strchr(msg, ':');
@@ -123,14 +124,16 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		memset(wm.message, 0, MESSAGE_SIZE);													
 		strncpy(wm.message, data, MESSAGE_SIZE);
 
-		if ((get_arg_type(data)) == 1) {
+        int type;
+        type = get_arg_type(data);
+		if (type == 1) {
             // if arg = start_movie
             pthread_t push_thread;
             pthread_create(&push_thread, NULL, start_movie, (void *)args);
-		} else if ((get_arg_type(data)) == 2) {
+		} else if (type == 2) {
             // seek
             while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
-        } else if ((get_arg_type(data)) == 3) {
+        } else if (type == 3) {
             // if arg = stop_movie
             pthread_cancel(&push_thread);
 		}
@@ -244,7 +247,10 @@ void *dispatcher(void *thread_id){
             
             ppm_freearray(pixarray, rows);
             
-            if ((get_arg_type(data)) == 1) {
+            int type;
+            type = get_arg_type(msg);
+            
+            if (type == 1) {
                 // start
                 // Send type
                 size_t len;
@@ -252,7 +258,7 @@ void *dispatcher(void *thread_id){
                 len = htonl(len);
                 write(wm[i].fd, &len, sizeof(size_t));
                 
-            } else if ((get_arg_type(data)) == 2) {
+            } else if (type == 2) {
                 // seek
                 // Send type
                 size_t len;
@@ -260,7 +266,7 @@ void *dispatcher(void *thread_id){
                 len = htonl(len);
                 write(wm[i].fd, &len, sizeof(size_t));
                 
-            } else if ((get_arg_type(data)) == 3) {
+            } else if (type == 3) {
                 // stop
                 // Send type
                 size_t len;
