@@ -124,11 +124,12 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		memset(wm.message, 0, MESSAGE_SIZE);													
 		strncpy(wm.message, data, MESSAGE_SIZE);
 
+        pthread_t push_thread;
         int type;
         type = get_arg_type(data);
 		if (type == 1) {
             // if arg = start_movie
-            pthread_t push_thread;
+            
             pthread_create(&push_thread, NULL, start_movie, (void *)args);
 		} else if (type == 2) {
             // seek
