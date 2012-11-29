@@ -3,6 +3,7 @@
 #include <linux/init.h>
 #include <linux/proc_fs.h>
 
+void my_printk(char *string);
 
 static int __init init_mutex(void)
 {
