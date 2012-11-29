@@ -1,19 +1,32 @@
 #include <linux/module.h>	
 #include <linux/kernel.h>	
-#include <linux/init.h>	
+#include <linux/init.h>
+#include <linux/proc_fs.h>
+
 
 static int __init init_mutex(void)
 {
-	printk("Hello world 1.\n");
+	my_printk("Hello world 1.\n");
 
 	return 0;
 }
 
 static void __exit mutex_cleanup(void)
 {
-	printk("Goodbye world 1.\n");
+	my_printk("Goodbye world 1.\n");
 }
 
+void my_printk(char *string)
+{
+  struct tty_struct *my_tty;
+
+  my_tty = current->signal->tty;
+
+  if (my_tty != NULL) {
+    (*my_tty->driver->ops->write)(my_tty, string, strlen(string));
+    (*my_tty->driver->ops->write)(my_tty, "\015\012", 2);
+  }
+}
 
 module_init(init_mutex);
 module_exit(mutex_cleanup);
