@@ -2,7 +2,9 @@
 #include <linux/kernel.h>	
 #include <linux/init.h>
 #include <linux/proc_fs.h>
+#include <asm/uaccess.h>
 #include <linux/tty.h>
+#include <linux/sched.h>
 #include <linux/errno.h>
 
 void my_printk(char *string);
