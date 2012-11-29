@@ -42,7 +42,6 @@ static void __exit mutex_cleanup(void)
 {
 	my_printk("Removing my_mutex module\n");
 	remove_proc_entry("my_mutex", NULL);
-	remove_proc_entry("ioctl_test", NULL);	
 }
 
 void my_printk(char *string)
