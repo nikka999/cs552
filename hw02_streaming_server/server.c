@@ -72,11 +72,13 @@ char* get_msg_without_repeat(char *msg) {
     return ret;
 }
 
-int get_arg(char msg[]) {
+int get_arg(char *msg) {
     int delim = ':';
     char * ptr;
+    printf("pre strrchr--- msg=%s\n", msg);
+
     ptr = strrchr(msg, delim);
-    // printf("%s, len=%d\n", ptr, strlen(ptr));
+    printf("%s, len=%d\n", ptr, strlen(ptr));
     char t[(strlen(ptr))];
 	// get rid of first char=":"
     strncpy(t, (ptr + 1), (strlen(ptr)-1));
@@ -85,17 +87,23 @@ int get_arg(char msg[]) {
     return result;
 }
 
-void *start_movie(void *vargs) {
-	worker_message *wm = (worker_message *)vargs;
+void *start_movie(void *vm) {
+	worker_message *wm = vm;
 	int i, j;
-    // get number of repeat
+    	// get number of repeat
+	//printf("pre get arg, msg=%s\n", (char *)wm->message);
     int repeat = get_arg(wm->message);
-    char *arg;
+//	printf("post get arg, repeat=%d, msg=%s\n", repeat, wm->message); 
+char *arg;
+//printf("pre get msg\n");
     arg = get_msg_without_repeat(wm->message);
+//	printf("post getmsgw/out repeat= %s\n", wm->message);
+//printf("post get msg\n");
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
 			sprintf(wm->message, "%s:%d", arg, j);
-		printf("%s\n", wm->message);
+		//printf("%s\n", wm->message);
+//=========================================================
 	while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
 		}
 	}
@@ -127,7 +135,6 @@ int get_arg_type(char *msg) {
 int thread_work(int sd, int tid, size_t buf_size, char* data) {
 	int rc;
 	worker_message wm;
-	char *args[5];
 	while (read(sd, &buf_size, sizeof(size_t)) > 0) {
 		// write protocol, first send buffer size through port, then send string itself
 		buf_size = ntohl(buf_size);
@@ -141,12 +148,14 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		wm.fd = sd;
 		memset(wm.message, 0, MESSAGE_SIZE);
 		strncpy(wm.message, data, MESSAGE_SIZE);
+		
+
         pthread_t push_thread;
         int type;
         type = get_arg_type(data);
 		if (type == 1) {
             // if arg = start_movie
-            pthread_create(&push_thread, NULL, start_movie, (void *)args);
+            pthread_create(&push_thread, NULL, start_movie, &wm);
         } else if (type == 2) {
             // seek
             while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
@@ -225,7 +234,7 @@ void *dispatcher(void *thread_id){
 		qsort(wm, START_DISPATCH, sizeof(worker_message), compare_messages);
 		for (i = 0; i < START_DISPATCH; i++) {
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
-			printf("dispatcher: msg is %s\n", msg);
+			printf("dispatcher: msg is %s\n", wm[i].message);
 			
             /** SENDING IMAGE */
             pixel** pixarray;
