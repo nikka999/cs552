@@ -14,7 +14,7 @@ struct ioctl_test_t {
   char field2;
 };
 
-#define IOCTL_TEST _IOW(0, 6, struct ioctl_test_t)
+#define MUTEX_LOCK _IOW(0, 6, struct ioctl_test_t)
 
 static int pseudo_device_ioctl(struct inode *inode, struct file *file,
                                unsigned int cmd, unsigned long arg);

@@ -2,7 +2,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#define IOCTL_TEST _IOW(0, 6, struct ioctl_test_t)
+#define MUTEX_LOCK _IOW(0, 6, struct ioctl_test_t)
 
 int main () {
 
