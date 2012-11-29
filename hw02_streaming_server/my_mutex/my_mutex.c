@@ -28,7 +28,7 @@ static int __init init_mutex(void)
 	my_printk("Loading my_mutex module\n");
 	pseudo_dev_proc_operations.ioctl = pseudo_device_ioctl;
 	
-	proc_entry = create_proc_entry("ioctl_test", 0444, NULL);
+	proc_entry = create_proc_entry("my_mutex", 0444, NULL);
 	if(!proc_entry)
   	{
     	my_printk("Error creating /proc entry.\n");
@@ -41,6 +41,8 @@ static int __init init_mutex(void)
 static void __exit mutex_cleanup(void)
 {
 	my_printk("Removing my_mutex module\n");
+	remove_proc_entry("my_mutex", NULL);
+	remove_proc_entry("ioctl_test", NULL);	
 }
 
 void my_printk(char *string)
