@@ -17,7 +17,7 @@ int main () {
   ioctl_test.field1 = 10;
   ioctl_test.field2 = 'a';
 
-  ioctl (fd, IOCTL_TEST, &ioctl_test);
+  ioctl (fd, MUTEX_LOCK, &ioctl_test);
 
   return 0;
 }

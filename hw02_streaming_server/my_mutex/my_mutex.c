@@ -63,10 +63,10 @@ static int pseudo_device_ioctl(struct inode *inode, struct file *file,
 
   	switch (cmd){
 
-  		case IOCTL_TEST:
+  		case MUTEX_LOCK:
     		copy_from_user(&ioc, (struct ioctl_test_t *)arg,
 				sizeof(struct ioctl_test_t));
-    		printk("<1> ioctl: call to IOCTL_TEST (%d,%c)!\n",
+    		my_printk("ioctl: call to MUTEX_LOCK (%d,%c)!\n",
            		ioc.field1, ioc.field2);
 
     		my_printk ("Got msg in kernel\n");
