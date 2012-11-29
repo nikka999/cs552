@@ -230,7 +230,9 @@ void *dispatcher(void *thread_id){
 	while(1) {
 		while(cb_count(&GloBuff) < START_DISPATCH);
 		pthread_mutex_lock(&buff_mutex);
-		for (i = 0; cb_pop(&GloBuff, &wm[i]) != BUFFER_EMPTY; i++);
+		for (i = 0; cb_pop(&GloBuff, &wm[i]) != BUFFER_EMPTY; i++) {
+		printf("poped, msg=%s\n", wm[i].message);
+}
 		qsort(wm, START_DISPATCH, sizeof(worker_message), compare_messages);
 		for (i = 0; i < START_DISPATCH; i++) {
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
