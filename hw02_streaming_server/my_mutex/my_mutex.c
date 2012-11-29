@@ -2,6 +2,8 @@
 #include <linux/kernel.h>	
 #include <linux/init.h>
 #include <linux/proc_fs.h>
+#include <linux/tty.h>
+#include <linux/errno.h>
 
 void my_printk(char *string);
 
