@@ -6,6 +6,7 @@
 #include <linux/tty.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
+#include <asm/semaphore.h>
 
 void my_printk(char *string);
 
@@ -14,7 +15,9 @@ struct ioctl_test_t {
   char field2;
 };
 
-#define MUTEX_LOCK _IOW(0, 6, struct ioctl_test_t)
+#define MUTEX_LOCK _IOW(0, 0, struct semaphore)
+#define MUTEX_UNLOCK _IOW(0, 1, struct semaphore)
+
 
 static int pseudo_device_ioctl(struct inode *inode, struct file *file,
                                unsigned int cmd, unsigned long arg);
@@ -59,17 +62,17 @@ void my_printk(char *string)
 static int pseudo_device_ioctl(struct inode *inode, struct file *file,
                                 unsigned int cmd, unsigned long arg)
 {
-	struct ioctl_test_t ioc;
+	struct semaphore ioc;
 
   	switch (cmd){
 
   		case MUTEX_LOCK:
-    		copy_from_user(&ioc, (struct ioctl_test_t *)arg,
-				sizeof(struct ioctl_test_t));
-    		printk("ioctl: call to MUTEX_LOCK (%d,%c)!\n",
-           		ioc.field1, ioc.field2);
-
-    		my_printk ("Got msg in kernel\n");
+    		copy_from_user(&ioc, (struct semaphore *)arg,
+				sizeof(struct semaphore));
+    		// printk("ioctl: call to MUTEX_LOCK (%d,%c)!\n",
+    		//            		ioc.field1, ioc.field2);
+			DECLARE_MUTEX(ioc);
+    		my_printk ("Got locking in kernel\n");
     		break;
 
   		default:
