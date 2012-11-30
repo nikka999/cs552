@@ -1,5 +1,5 @@
 #define MAXSLOTS 100
-#define START_DISPATCH 1
+#define START_DISPATCH 10
 #define MAX_PRIORITY 10
 #define MESSAGE_SIZE 50
 typedef struct circular_buffer

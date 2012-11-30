@@ -134,13 +134,15 @@ void *dispatcher(void *thread_id){
 	worker_message wm[START_DISPATCH], buff_wm;
 	char msg[40];
 	size_t size = 0;
-	int i, priority;
+	int i, priority, j;
 	while(1) {
 		while(cb_count(&GloBuff) < START_DISPATCH);
 		pthread_mutex_lock(&buff_mutex);
+		j = 0;
 		for (i = 0; cb_pop(&GloBuff, &wm[i]) != BUFFER_EMPTY; i++);
-		qsort(wm, START_DISPATCH, sizeof(worker_message), compare_messages);
-		for (i = 0; i < START_DISPATCH; i++) {
+		j = i-1;
+		qsort(wm, j, sizeof(worker_message), compare_messages);
+		for (i = 0; i < j; i++) {
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
 			printf("dispatcher: msg is %s\n", msg);
 			size = strlen(msg);
@@ -221,7 +223,11 @@ void free_cb(circular_buffer *cb) {
 }
 
 int cb_count(circular_buffer *cb) {
-	return cb->count;
+	int count;
+	pthread_mutex_lock(&buff_mutex);
+	count = cb->count;
+	pthread_mutex_unlock(&buff_mutex);	
+	return count;
 }
 
 
