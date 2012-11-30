@@ -6,14 +6,10 @@
 #include <linux/tty.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
-#include <asm/semaphore.h>
+#include <linux/semaphore.h>
 
 void my_printk(char *string);
 
-struct ioctl_test_t {
-  int field1;
-  char field2;
-};
 
 #define MUTEX_LOCK _IOW(0, 0, struct semaphore)
 #define MUTEX_UNLOCK _IOW(0, 1, struct semaphore)
