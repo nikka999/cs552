@@ -12,6 +12,9 @@
 #include "server.h"
 #include <netpbm/ppm.h>
 
+int AV_ARGS = (120*160*3)/5;
+unsigned char AV_ARRAY[100][120*160*3];
+
 Params params;
 int GloSocket = 0;
 circular_buffer GloBuff;
@@ -75,11 +78,8 @@ char* get_msg_without_repeat(char *msg) {
 int get_arg(char *msg) {
     int delim = ':';
     char * ptr;
-    printf("pre strrchr--- msg=%s\n", msg);
-
     ptr = strrchr(msg, delim);
-    printf("%s, len=%d\n", ptr, strlen(ptr));
-    char t[(strlen(ptr))];
+	char t[(strlen(ptr))];
 	// get rid of first char=":"
     strncpy(t, (ptr + 1), (strlen(ptr)-1));
     t[strlen(ptr)-1] = '\0';
@@ -90,21 +90,18 @@ int get_arg(char *msg) {
 void *start_movie(void *vm) {
 	worker_message *wm = vm;
 	int i, j;
-    	// get number of repeat
-	//printf("pre get arg, msg=%s\n", (char *)wm->message);
-    int repeat = get_arg(wm->message);
-//	printf("post get arg, repeat=%d, msg=%s\n", repeat, wm->message); 
-char *arg;
-//printf("pre get msg\n");
-    arg = get_msg_without_repeat(wm->message);
-//	printf("post getmsgw/out repeat= %s\n", wm->message);
-//printf("post get msg\n");
+    	int repeat = get_arg(wm->message);
+	//printf("post get arg, repeat=%d, msg=%s\n", repeat, wm->message); 
+	char *arg;
+	//printf("pre get msg\n");
+    	arg = get_msg_without_repeat(wm->message);
+	//printf("post getmsgw/out repeat= %s\n", wm->message);
+	//printf("post get msg\n");
 	for (i = 0; i < repeat+1; i++) {
 		for (j = 1; j < 101; j++) {
 			sprintf(wm->message, "%s:%d", arg, j);
-		//printf("%s\n", wm->message);
-//=========================================================
-	while(cb_push(&GloBuff, &wm) == BUFFER_FULL);
+			//printf("%s\n", wm->message);
+	while(cb_push(&GloBuff, wm) == BUFFER_FULL);
 		}
 	}
     pthread_exit(NULL);
@@ -148,7 +145,6 @@ int thread_work(int sd, int tid, size_t buf_size, char* data) {
 		wm.fd = sd;
 		memset(wm.message, 0, MESSAGE_SIZE);
 		strncpy(wm.message, data, MESSAGE_SIZE);
-		
 
         pthread_t push_thread;
         int type;
@@ -222,7 +218,7 @@ int compare_messages(const void *a, const void *b) {
 
 
 void *dispatcher(void *thread_id){
-	worker_message wm[START_DISPATCH], buff_wm;
+	worker_message wm[MAXSLOTS], buff_wm;
 	char msg[40];
 	size_t size = 0;
 	int i, priority;
@@ -230,46 +226,21 @@ void *dispatcher(void *thread_id){
 	while(1) {
 		while(cb_count(&GloBuff) < START_DISPATCH);
 		pthread_mutex_lock(&buff_mutex);
+		int j = 0;
 		for (i = 0; cb_pop(&GloBuff, &wm[i]) != BUFFER_EMPTY; i++) {
-		printf("poped, msg=%s\n", wm[i].message);
-}
+			//printf("poped, msg=%s\n", wm[i].message);
+			j++;
+		}
 		qsort(wm, START_DISPATCH, sizeof(worker_message), compare_messages);
-		for (i = 0; i < START_DISPATCH; i++) {
+		for (i = 0; i < j; i++) {
 			sprintf(msg, "%d,%d,%s", wm[i].thread_id, wm[i].fd, wm[i].message);
-			printf("dispatcher: msg is %s\n", wm[i].message);
-			
-            /** SENDING IMAGE */
-            pixel** pixarray;
-            FILE *fp;
-            int cols, rows;
-            pixval maxval;
-            unsigned char *buf;
-            int frame_num = get_arg(msg);
-            int x, y;
-            char location[50];
-            sprintf(location, "%s%d%s", "support/images/sw", frame_num, ".ppm");
+			printf("dispatcher: msg is %s\n", msg);
 
-            printf("%s\n", location);
-            if ((fp = fopen (location,"r")) == NULL) {
-                fprintf (stderr, "Can't open input file\n");
-                exit (1);
-            }
-            pixarray = ppm_readppm (fp, &cols, &rows, &maxval);
-            buf = (unsigned char *)malloc (cols*rows*3);
-            printf("COLS = %d, ROWS = %d\n", cols, rows);
-            for (y = 0; y < rows; y++) {
-                for (x = 0; x < cols; x++) {
-                    buf[(y*cols+x)*3+0] = PPM_GETR(pixarray[rows-y-1][x]);
-                    buf[(y*cols+x)*3+1] = PPM_GETG(pixarray[rows-y-1][x]);
-                    buf[(y*cols+x)*3+2] = PPM_GETB(pixarray[rows-y-1][x]);
-                }
-            }
-            
-            ppm_freearray(pixarray, rows);
-            
+            /** SENDING IMAGE */
+		int frame_num = get_arg(msg);
             int type;
             type = get_arg_type(msg);
-            
+
             if (type == 1) {
                 // start
                 // Send type
@@ -277,7 +248,6 @@ void *dispatcher(void *thread_id){
                 len = 1;
                 len = htonl(len);
                 write(wm[i].fd, &len, sizeof(size_t));
-                
             } else if (type == 2) {
                 // seek
                 // Send type
@@ -285,7 +255,6 @@ void *dispatcher(void *thread_id){
                 len = 2;
                 len = htonl(len);
                 write(wm[i].fd, &len, sizeof(size_t));
-                
             } else if (type == 3) {
                 // stop
                 // Send type
@@ -294,17 +263,16 @@ void *dispatcher(void *thread_id){
                 len = htonl(len);
                 write(wm[i].fd, &len, sizeof(size_t));
             }
-            
-            // Parse image into 5 packets.
-            int arg = (cols*rows*3)/5;
-            
+
             // Send image
-            write(wm[i].fd, (buf), arg);
-            write(wm[i].fd, (buf + arg), arg);
-            write(wm[i].fd, (buf + 2*arg), arg);
-            write(wm[i].fd, (buf + 3*arg), arg);
-            write(wm[i].fd, (buf + 4*arg), arg);
+            write(wm[i].fd, (AV_ARRAY[frame_num-1]), AV_ARGS);
+            write(wm[i].fd, (AV_ARRAY[frame_num-1] + AV_ARGS), AV_ARGS);
+            write(wm[i].fd, (AV_ARRAY[frame_num-1] + 2*AV_ARGS), AV_ARGS);
+            write(wm[i].fd, (AV_ARRAY[frame_num-1] + 3*AV_ARGS), AV_ARGS);
+            write(wm[i].fd, (AV_ARRAY[frame_num-1] + 4*AV_ARGS), AV_ARGS);
+		usleep(10000);
 		}
+
 		pthread_mutex_unlock(&buff_mutex);
 	}
 }
@@ -351,6 +319,9 @@ int cb_push(circular_buffer *cb, const void *input) {
 		return BUFFER_FULL;
 	}
 	memcpy((void *)cb->head, input, cb->sz);
+//	worker_message *inp = (worker_message *)input;
+//	worker_message *out = (worker_message *)cb->head;
+//	printf("INPUT=%s, OUTPUT=%s\n", inp->message, out->message);
 	cb->head = cb->head + cb->sz;
 	if (cb->head == cb->buffer_end)
         cb->head = cb->buffer;
@@ -366,6 +337,8 @@ int cb_pop(circular_buffer *cb, const void *output) {
 		return BUFFER_EMPTY;
 	}
 	memcpy((void *)output, (void *)cb->tail, cb->sz);
+//	worker_message *ha = (worker_message *)output;
+//	printf("mem-> %s\n", ha->message);
 	cb->tail = cb->tail + cb->sz;
     if (cb->tail == cb->buffer_end)
         cb->tail = cb->buffer;
@@ -462,6 +435,38 @@ int main (int argc, char const *argv[])
 	int rc;
 	rc = parse_args(argc, argv, &params);
 	if (rc) exit(0);
+/** INPUT AV_ARRAY */
+	int i;
+	char location[50];
+	pixel** pixarray;
+	FILE *fp;
+	int cols, rows;
+	pixval maxval;
+	
+	int x, y;
+	
+	for (i = 0; i < 100; i++) {
+		sprintf(location, "%s%d%s", "support/images/sw", (i+1), ".ppm");
+
+		if ((fp = fopen(location, "r")) == NULL) {
+			fprintf(stderr, "Cant open input file\n");
+			exit(1);
+		}
+
+		pixarray = ppm_readppm (fp, &cols, &rows, &maxval);
+		fclose(fp);
+		for (y = 0; y < rows; y++) {
+			for (x = 0; x < cols; x++) {
+				AV_ARRAY[i][(y*cols+x)*3+0] = PPM_GETR(pixarray[rows-y-1][x]);
+				AV_ARRAY[i][(y*cols+x)*3+1] = PPM_GETG(pixarray[rows-y-1][x]);
+				AV_ARRAY[i][(y*cols+x)*3+2] = PPM_GETB(pixarray[rows-y-1][x]);
+			}
+		}
+	
+		ppm_freearray(pixarray, rows);
+	}
+	printf("INFO: Finish importing frames\n");
+/**EOF*/
 	rc = init_cb(&GloBuff, sizeof(worker_message));
 	signal(SIGINT, intHandler);
    	signal(SIGKILL, intHandler);
@@ -469,3 +474,4 @@ int main (int argc, char const *argv[])
 	servConn (params.port);		/* Server port. */
 	return 0;
 }
+

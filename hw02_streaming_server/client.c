@@ -276,10 +276,11 @@ void *recv_listen(void *sd) {
                 
                 glDrawPixels (cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buf);
                 glFlush ();
-                usleep(24100);
-                
+               // usleep(24100);
+                usleep(50000);
                 read(fd, &type, sizeof(size_t));
                 type = ntohl(type);
+		frame_count++;
                 if (type == 3) {
                     STOP = 1;
                 }
