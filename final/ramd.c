@@ -19,7 +19,12 @@ static int __init init_routine(void) {
 		printk("<1> Error creating /proc entry.\n");
 		return 1;
 	}
-	proc_entry->proc_fops = &ramdisk_ioctl;
+	// Working version
+	//proc_entry->proc_fops = &ramdisk_ioctl;
+
+// Trying read write
+	proc_entry->read_proc = read_proc;
+	proc_entry->write_proc = write_proc;
 
 	// vmalloc for 2MB
 	ramdisk = (char *)vmalloc(2097150);
