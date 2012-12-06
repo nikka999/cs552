@@ -20,11 +20,11 @@ static int __init init_routine(void) {
 		return 1;
 	}
 	// Working version
-	//proc_entry->proc_fops = &ramdisk_ioctl;
+	proc_entry->proc_fops = &ramdisk_ioctl;
 
 // Trying read write
-	proc_entry->read_proc = read_proc;
-	proc_entry->write_proc = write_proc;
+//	proc_entry->read_proc = read_proc;
+//	proc_entry->write_proc = write_proc;
 
 	// vmalloc for 2MB
 	ramdisk = (char *)vmalloc(2097150);
