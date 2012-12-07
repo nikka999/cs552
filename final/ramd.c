@@ -8,10 +8,13 @@ MODULE_LICENSE("GPL");
 
 static char *ramdisk;
 static struct proc_dir_entry *proc_entry;
-static int ramdisk_ioctl();
+static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg);
+static struct file_operations proc_operations;
 
 static int __init init_routine(void) {
 	printk("<1> Loading RAMDISK Module\n");
+
+	proc_operations.ioctl = ramdisk_ioctl;
 
 	// Create /proc entry first. 666 for Read/Write
 	proc_entry = create_proc_entry("ramdisk", 0666, NULL);
@@ -20,7 +23,7 @@ static int __init init_routine(void) {
 		return 1;
 	}
 	// Working version
-	proc_entry->proc_fops = &ramdisk_ioctl;
+	proc_entry->proc_fops = &proc_operations;
 
 // Trying read write
 //	proc_entry->read_proc = read_proc;
@@ -46,8 +49,8 @@ static void __exit exit_routine(void) {
 * Ramdisk entry point
 */
 
-static int ramdisk_ioctl() {
-return 0;
+static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
+	return 0;
 }
 
 module_init(init_routine);
