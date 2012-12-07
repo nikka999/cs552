@@ -6,7 +6,7 @@
 
 MODULE_LICENSE("GPL");
 
-static char *ramdisk;
+static unsigned char *ramdisk;
 static struct proc_dir_entry *proc_entry;
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg);
 static struct file_operations proc_operations;
@@ -30,7 +30,7 @@ static int __init init_routine(void) {
 //	proc_entry->write_proc = write_proc;
 
 	// vmalloc for 2MB
-	ramdisk = (char *)vmalloc(2097150);
+	// ramdisk = (char *)vmalloc(2097150);
 
 	return 0;
 }
@@ -50,6 +50,28 @@ static void __exit exit_routine(void) {
 */
 
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
+	// int i;
+	// int size;
+
+	/* 
+	 * Switch according to the ioctl called 
+	 */
+	switch (cmd) {
+	case RD_MALLOC:
+
+		// size = (int)arg;
+		// 
+		// get_user(ch, temp);
+		// for (i = 0; ch && i < BUF_LEN; i++, temp++)
+		// 	get_user(ch, temp);
+		// 
+		// device_write(file, (char *)ioctl_param, i, 0);
+		// vmalloc for 2MB
+		ramdisk = (unsigned char *)vmalloc(2097150);
+		printk("<1>I finished vmalloc!\n");
+		break;
+	}
+
 	return 0;
 }
 
