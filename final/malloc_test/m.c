@@ -23,6 +23,17 @@
 /** Superblock */
 #define SUPERBLOCK_START 0
 #define SUPERBLOCK_END (SUPERBLOCK_START + BLOCK_SIZE - 1)
+#define FREEBLOCK_INT 0
+#define FREEINODE_INT 4
+/** Superblock methods */
+#define SET_FREEBLOCK_COUNT(x); {SET_INT(FREEBLOCK_INT, x);}
+#define GET_FREEBLOCK_COUNT GET_INT(FREEBLOCK_INT)
+#define INC_FREEBLOCK_COUNT {SET_INT(FREEBLOCK_INT, (GET_INT(FREEBLOCK_INT)+1));}
+#define DEC_FREEBLOCK_COUNT {SET_INT(FREEBLOCK_INT, (GET_INT(FREEBLOCK_INT)-1));}
+#define SET_FREEINODE_COUNT(x); {SET_INT(FREEINODE_INT, x);}
+#define GET_FREEINODE_COUNT GET_INT(FREEINODE_INT)
+#define INC_FREEINODE_COUNT {SET_INT(FREEINODE_INT, (GET_INT(FREEINODE_INT)+1));}
+#define DEC_FREEINODE_COUNT {SET_INT(FREEINODE_INT, (GET_INT(FREEINODE_INT)-1));}
 
 /** Inode block */
 #define INODEBLOCK_START (SUPERBLOCK_END + 1)
@@ -39,7 +50,9 @@
 #define SET_TYPE_DIR(x) ramdisk[x+16] = 'd'; ramdisk[x+17] = 'i'; ramdisk[x+18] = 'r'; ramdisk[x+19]='\0';
 #define SET_SIZE(x, y); {SET_INT(x+20, y);}
 #define GET_SIZE(x) (GET_INT(x+20))
-
+// Set the #Z(0~9) pointer to location Y, at inode X
+#define SET_LOC_PTR(x, y, z); {SET_INT(((x+24)+(z*4)), y);}
+#define GET_LOC_PTR(x, z) (GET_INT(((x+24) + (z*4))))
 
 /** Bitmap block */ 
 #define BITMAPBLOCK_START (INODEBLOCK_END + 1)
@@ -85,6 +98,25 @@ int main() {
     } else {
         printf("Malloc successful\n");
     }
+    
+    /**  Superblock methods
+    int i=45680;
+    SET_FREEBLOCK_COUNT(i);
+    INC_FREEBLOCK_COUNT;
+    SET_FREEINODE_COUNT(i);
+    DEC_FREEINODE_COUNT;
+    int j;
+    int x;
+    printf("Frreblock=%d, freenode=%d\n", GET_FREEBLOCK_COUNT, GET_FREEINODE_COUNT);
+    for (j = 0; j < 8; j++) {
+        printf("byte=%d\t", j);
+        for (x = 0; x < 8; x++) {
+            printf("%d", GET_BIT(j, x));
+        }
+        printf("\n");
+    }
+     */
+    
     /**
     printf("Free block: %d\n", freeblock);
     printf("Free inode: %d\n", freeinode);
@@ -102,8 +134,11 @@ int main() {
     }
     printf("\n");
     
-    //int *size = GET_INT_PTR(100);
-    //*size = 2097152;
+    int *size = GET_INT_PTR(100);
+    *size = 2097152;
+    
+    SET_LOC_PTR(x, 19234, 9);
+    printf("loc ptr = %d\n", GET_LOC_PTR(x, 9));
     
     SET_SIZE(x, 19234);
     printf("%d\n", GET_SIZE(x));
@@ -113,7 +148,7 @@ int main() {
     }
     printf("\n");
     
-    int i;
+
     
     //for (i = 0; i < BITMAPBLOCK_START; i++) {
     //    ramdisk[i] = i % 256;
