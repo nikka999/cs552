@@ -13,6 +13,12 @@
 #define BIT_MASK_1(y) ((0x01 << (7-y)))
 // Create 0 on bit y (all others 1)
 #define BIT_MASK_0(y) (~BIT_MASK_1(y))
+// Get integer pointer
+#define GET_INT_PTR(X) ((int *)&ramdisk[X])
+// Get integer
+#define GET_INT(X) (*(int *)&ramdisk[X])
+// Set Integer
+#define SET_INT(X, Y); {int* temp=GET_INT_PTR(X); *temp=Y;}
 
 /** Superblock */
 #define SUPERBLOCK_START 0
@@ -24,7 +30,16 @@
 #define INODEBLOCK_SIZE (BLOCK_SIZE * INODEBLOCK_NUMBER)
 #define INODEBLOCK_END (INODEBLOCK_START + INODEBLOCK_SIZE - 1)
 #define INODE_SIZE 64
+#define INODE_NUMBER (INODEBLOCK_SIZE/INODE_SIZE)
+/** Each inode is NAME(16byte (15 char + 1 NULL)) + TYPE(4byte) + SIZE(4byte) + LOCATION(4*10byte)
+ */
+
 /** Inode block methods */
+#define SET_TYPE_REG(x) ramdisk[x+16] = 'r'; ramdisk[x+17] = 'e'; ramdisk[x+18] = 'g'; ramdisk[x+19]='\0';
+#define SET_TYPE_DIR(x) ramdisk[x+16] = 'd'; ramdisk[x+17] = 'i'; ramdisk[x+18] = 'r'; ramdisk[x+19]='\0';
+#define SET_SIZE(x, y); {SET_INT(x+20, y);}
+#define GET_SIZE(x) (GET_INT(x+20))
+
 
 /** Bitmap block */ 
 #define BITMAPBLOCK_START (INODEBLOCK_END + 1)
@@ -52,11 +67,15 @@
 #define PARTITION_SIZE ((PARTITION_END + 1 - PARTITION_START))
 #define PARTITION_NUMBER (PARTITION_SIZE/BLOCK_SIZE)
 
+/** MAXIMUM */
+#define MAX_FILE_COUNT INODE_NUMBER
+#define MAX_FILE_SIZE ((64*256)+(64*64*256)+256*8)
 
 
 
 unsigned char *ramdisk;
-
+int freeblock = PARTITION_NUMBER;
+int freeinode = INODE_NUMBER;
 
 int main() {
 	printf("Load\n");
@@ -66,6 +85,34 @@ int main() {
     } else {
         printf("Malloc successful\n");
     }
+    /**
+    printf("Free block: %d\n", freeblock);
+    printf("Free inode: %d\n", freeinode);
+    printf("Max_file count: %d\n", MAX_FILE_COUNT);
+    printf("Max_file size: %d\n", MAX_FILE_SIZE);
+    */
+    
+    // Test set type and set integer.
+    int x = 10;
+    SET_TYPE_DIR(x);
+    printf("%s\n", &ramdisk[26]);
+    int j;
+    for (j = x; j < (x+64); j++) {
+        printf("%d=%c  ", ramdisk[j], ramdisk[j]);
+    }
+    printf("\n");
+    
+    //int *size = GET_INT_PTR(100);
+    //*size = 2097152;
+    
+    SET_SIZE(x, 19234);
+    printf("%d\n", GET_SIZE(x));
+    
+    for (j = x; j < (x+64); j++) {
+        printf("%d=%c  ", ramdisk[j], ramdisk[j]);
+    }
+    printf("\n");
+    
     int i;
     
     //for (i = 0; i < BITMAPBLOCK_START; i++) {
