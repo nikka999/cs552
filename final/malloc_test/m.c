@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 
-// All START and END are inclusive
-#define RAMDISK_SIZE (2*1024*1024)
-#define BLOCK_SIZE 256
+#include "m.h"
 
 /** General methods */
 #define GET_BYTE(x) (ramdisk[x])
@@ -19,40 +18,6 @@
 #define GET_INT(X) (*(int *)&ramdisk[X])
 // Set Integer
 #define SET_INT(X, Y); {int* temp=GET_INT_PTR(X); *temp=Y;}
-
-/** Superblock */
-#define SUPERBLOCK_START 0
-#define SUPERBLOCK_END (SUPERBLOCK_START + BLOCK_SIZE - 1)
-#define FREEBLOCK_INT 0
-#define FREEINODE_INT 4
-/** Superblock methods */
-#define SET_FREEBLOCK_COUNT(x); {SET_INT(FREEBLOCK_INT, x);}
-#define GET_FREEBLOCK_COUNT GET_INT(FREEBLOCK_INT)
-#define INC_FREEBLOCK_COUNT {SET_INT(FREEBLOCK_INT, (GET_INT(FREEBLOCK_INT)+1));}
-#define DEC_FREEBLOCK_COUNT {SET_INT(FREEBLOCK_INT, (GET_INT(FREEBLOCK_INT)-1));}
-#define SET_FREEINODE_COUNT(x); {SET_INT(FREEINODE_INT, x);}
-#define GET_FREEINODE_COUNT GET_INT(FREEINODE_INT)
-#define INC_FREEINODE_COUNT {SET_INT(FREEINODE_INT, (GET_INT(FREEINODE_INT)+1));}
-#define DEC_FREEINODE_COUNT {SET_INT(FREEINODE_INT, (GET_INT(FREEINODE_INT)-1));}
-
-/** Inode block */
-#define INODEBLOCK_START (SUPERBLOCK_END + 1)
-#define INODEBLOCK_NUMBER 256
-#define INODEBLOCK_SIZE (BLOCK_SIZE * INODEBLOCK_NUMBER)
-#define INODEBLOCK_END (INODEBLOCK_START + INODEBLOCK_SIZE - 1)
-#define INODE_SIZE 64
-#define INODE_NUMBER (INODEBLOCK_SIZE/INODE_SIZE)
-/** Each inode is NAME(16byte (15 char + 1 NULL)) + TYPE(4byte) + SIZE(4byte) + LOCATION(4*10byte)
- */
-
-/** Inode block methods */
-#define SET_TYPE_REG(x) ramdisk[x+16] = 'r'; ramdisk[x+17] = 'e'; ramdisk[x+18] = 'g'; ramdisk[x+19]='\0';
-#define SET_TYPE_DIR(x) ramdisk[x+16] = 'd'; ramdisk[x+17] = 'i'; ramdisk[x+18] = 'r'; ramdisk[x+19]='\0';
-#define SET_SIZE(x, y); {SET_INT(x+20, y);}
-#define GET_SIZE(x) (GET_INT(x+20))
-// Set the #Z(0~9) pointer to location Y, at inode X
-#define SET_LOC_PTR(x, y, z); {SET_INT(((x+24)+(z*4)), y);}
-#define GET_LOC_PTR(x, z) (GET_INT(((x+24) + (z*4))))
 
 /** Bitmap block */ 
 #define BITMAPBLOCK_START (INODEBLOCK_END + 1)
@@ -74,222 +39,61 @@
 #define SEE_BITMAP_ALLOCATE(X) ((GET_BIT(GET_BYTE_NUMBER(X), GET_BYTE_OFFSET(X)) == 1) ? 1 : 0)
 #define SEE_BITMAP_FREE(X) ((GET_BIT(GET_BYTE_NUMBER(X), GET_BYTE_OFFSET(X)) == 0) ? 1 : 0)
 
-/** Partition */
-#define PARTITION_START (BITMAPBLOCK_END + 1)
-#define PARTITION_END (RAMDISK_SIZE - 1)
-#define PARTITION_SIZE ((PARTITION_END + 1 - PARTITION_START))
-#define PARTITION_NUMBER (PARTITION_SIZE/BLOCK_SIZE)
-// 14 char + 2 byte short
-#define PARTITION_DIR_ENTRY_SIZE 16
-#define PARTITION_DIR_ENTRY_COUNT (BLOCK_SIZE/PARTITION_DIR_ENTRY_SIZE)
-
 /** MAXIMUM */
 #define MAX_FILE_COUNT INODE_NUMBER
 #define MAX_FILE_SIZE ((64*256)+(64*64*256)+256*8)
 
-struct Superblock {
-    int freeinode;
-    int freeblock;
-    unsigned char padding[248];
-};
+char dir[4] = "dir";
+char reg[4] = "reg";
+struct Ramdisk *rd;
 
-struct Inode {
-    char type[4];
-    int size;
-    union Block *blocks[10];
-    unsigned char padding[16];
-};
-
-struct Block_reg {
-    unsigned char byte[256];
-};
-
-struct Dir_entry {
-    // Contain in Block (type: dir)
-    char filename[14];
-    short inode_number;
-};
-
-struct Block_dir {
-    struct Dir_entry ent[16];
-};
+void init_fs() {
+    printf("INIT\n");
+    // INIT FILESYSTEM:
+    rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
+    printf("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
+    // Setting up root
+    SET_INODE_TYPE_DIR(0);
+    //printf("type=%s\n", rd->ib[0].type);
+    SET_INODE_SIZE(0, 0);
+    //printf("size=%d\n", rd->ib[0].size);
+    union Block root;
+    rd->pb[0]=root;
+    rd->ib[0].blocks[0]=&root;
+    INIT_FREEINODE;
+    INIT_FREEBLOCK;
+    DECR_FREEBLOCK; // -1 for ROOT
+    DECR_FREEINODE; // -1 for ROOT
+    // EOF init
+}
 
 
-struct Block_ptr {
-    // Block of pointers, for large file. 4=ptr size;
-    union Block *blocks[BLOCK_SIZE/4];
-};
+// Write to file block/and get from. (NO REDIRECTION)
+#define WRITE_TO_FILE(BLOCK, BYTES); {memcpy(rd->pb[BLOCK].reg.byte, BYTES, 256);}
+#define GET_FROM_FILE(BLOCK) rd->pb[BLOCK].reg.byte
 
-
-union Block {
-    struct Block_reg reg;
-    struct Block_dir dir;
-    struct Block_ptr ptr;
-};
-
-struct Bitmap_block {
-    unsigned char byte[256*4];
-};
-
-struct Ramdisk{
-    struct Superblock sb;
-    struct Inode ib[INODE_NUMBER];
-    struct Bitmap_block bb;
-    union Block pb[PARTITION_NUMBER];
-};
+// Assign BLOCK location to #Inode's #index. => Assign location in inode (regular file block (0~8))
+#define ASSIGN_LOCATION(INODE, INDEX, BLOCK); {rd->ib[INODE].blocks[INDEX] = &rd->pb[BLOCK];}
+#define GET_FROM_LOCATION(INODE, INDEX) (*rd->ib[INODE].blocks[INDEX]).reg.byte
 
 int main() {
-	printf("Load\n");
+    init_fs();
+#ifdef debug
+    PRINT_FREEINODE_COUNT;
+    PRINT_FREEBLOCK_COUNT;
+    // test set filename
+    char n[16] = "non-root";
+    SET_DIR_ENTRY_NAME(0, 0, n);
+    PRINT_DIR_ENTRY_NAME(0, 0);
+#endif
+    // test write to reg file block
+    unsigned char x[260] = "asdfasdfasdfasdfasdfasdf";
+    WRITE_TO_FILE(1, x)
+    printf("Print: %s\n", GET_FROM_FILE(1));
 
-    struct Ramdisk *rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
-    printf("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
-    rd->sb.freeinode = 1;
-    rd->ib[0].size = 1234;
-    union Block b;
-    b.dir.ent[0].filename[0]='a';
-    rd->pb[0] = b;
+    // Assign location in inode (regular file block (0~8))
+    ASSIGN_LOCATION(1, 0, 1);
+    printf("Print: %s\n", GET_FROM_LOCATION(1, 0));
     
-    printf("filename=%c\n", rd->pb[0].dir.ent[0].filename[0]);
-    
-    /**
-    printf("Sizeof: superblock=%d, inode block size = %d, inode=%d, #of inodes=%d, inodeblock=%d, block=%d, Dir_ent=%d, Block_dir_entry=%d, Ptr_entry=%d\n",
-           (int)sizeof(Superblock),
-           INODEBLOCK_SIZE,
-           (int)sizeof(Inode),
-           INODE_NUMBER,
-           (int)sizeof(Inodeblock),
-           (int)sizeof(Block),
-           (int)sizeof(Dir_entry),
-           (int)sizeof(Block_dir),
-           (int)sizeof(Ptr_entry));
-    */
-     
-    // INIT FILESYSTEM:
-    
-    
-    /**  Superblock methods
-    int i=45680;
-    SET_FREEBLOCK_COUNT(i);
-    INC_FREEBLOCK_COUNT;
-    SET_FREEINODE_COUNT(i);
-    DEC_FREEINODE_COUNT;
-    int j;
-    int x;
-    printf("Frreblock=%d, freenode=%d\n", GET_FREEBLOCK_COUNT, GET_FREEINODE_COUNT);
-    for (j = 0; j < 8; j++) {
-        printf("byte=%d\t", j);
-        for (x = 0; x < 8; x++) {
-            printf("%d", GET_BIT(j, x));
-        }
-        printf("\n");
-    }
-     */
-    
-    /**
-    printf("Free block: %d\n", freeblock);
-    printf("Free inode: %d\n", freeinode);
-    printf("Max_file count: %d\n", MAX_FILE_COUNT);
-    printf("Max_file size: %d\n", MAX_FILE_SIZE);
-    */
-    
-    /* Test set type and set integer.
-    int x = 10;
-    SET_TYPE_DIR(x);
-    printf("%s\n", &ramdisk[26]);
-    int j;
-    for (j = x; j < (x+64); j++) {
-        printf("%d=%c  ", ramdisk[j], ramdisk[j]);
-    }
-    printf("\n");
-    
-    int *size = GET_INT_PTR(100);
-    *size = 2097152;
-    
-    SET_LOC_PTR(x, 19234, 9);
-    printf("loc ptr = %d\n", GET_LOC_PTR(x, 9));
-    
-    SET_SIZE(x, 19234);
-    printf("%d\n", GET_SIZE(x));
-    
-    for (j = x; j < (x+64); j++) {
-        printf("%d=%c  ", ramdisk[j], ramdisk[j]);
-    }
-    printf("\n");
-    
-     */
-    
-    //for (i = 0; i < BITMAPBLOCK_START; i++) {
-    //    ramdisk[i] = i % 256;
-    //}
-
-    //for (i = SUPERBLOCK_START; i < SUPERBLOCK_END; i++) {
-    //    printf("%d: %d <=> \t", i, ramdisk[i]);
-    //}
-    //for (i = BITMAPBLOCK_START; i <= BITMAPBLOCK_END; i++) {
-    //    printf("%d: %d <=> \t", i, ramdisk[i]);
-    //}
-    
-    // Test get bit
-    /**
-    int j = BITMAPBLOCK_START-1;
-    printf("%d\nBIT=", GET_BYTE(j));
-    for (i = 0; i < 8; i++) {
-        printf("%d", GET_BIT(j, i));
-
-    }
-    printf("\n");
-    */
-    
-    /**
-    int x = BITMAPBLOCK_START-1;
-    int y = 8;
-    printf("ORIG: %d\n", ramdisk[x]);
-    SET_BIT_TO_1_BYTE(x, y);
-    printf("Set %d bit to 1, bytes=", y);
-    for (i = 0; i < 8; i++) {
-        printf("%d", ((ramdisk[x] >> (7-i)) & 0x01));
-    }
-    printf("\n");
-    SET_BIT_TO_0_BYTE(x, y);
-    printf("Set %d bit to 1, bytes=", y);
-    for (i = 0; i < 8; i++) {
-        printf("%d", ((ramdisk[x] >> (7-i)) & 0x01));
-    }
-    printf("\n");
-    */
-    
-    
-/** test set allocate and free
-    printf("%d bitmapblock start, %d bitmapblock end, %d partition start, %d partition end, %d partition size, %d partition number\n", BITMAPBLOCK_START, BITMAPBLOCK_END, PARTITION_START, PARTITION_END, PARTITION_SIZE, PARTITION_NUMBER);
-    
-    int f= 256*(261);
-    printf("Address: %d, GET_BYTE_NUMBER=%d, GET_BYTE_OFFSET=%d\n", f, GET_BYTE_NUMBER(f), GET_BYTE_OFFSET(f));
-    SET_BITMAP_ALLOCATE_BLOCK(f);
-    printf("Print bitmap\n");
-    int j;
-    for (j=BITMAPBLOCK_START; j<=BITMAPBLOCK_END; j++) {
-        printf("byte=%d\t", j);
-        for (i = 0; i < 8; i++) {
-            printf("%d", GET_BIT(j, i));
-        }
-        printf("\n");
-    }
-    printf("EOF PRINT BITMAP\n");
-    
-    printf("Is %d block allocate?=%d, free=%d?\n", f, SEE_BITMAP_ALLOCATE(f), SEE_BITMAP_FREE(f));
-    
-    SET_BITMAP_FREE_BLOCK(f);
-    printf("Print bitmap\n");
-    for (j=BITMAPBLOCK_START; j<=BITMAPBLOCK_END; j++) {
-        printf("byte=%d\t", j);
-        for (i = 0; i < 8; i++) {
-            printf("%d", GET_BIT(j, i));
-        }
-        printf("\n");
-    }
-    printf("EOF PRINT BITMAP\n");
-    printf("Is %d block allocate?=%d, free=%d?\n", f, SEE_BITMAP_ALLOCATE(f), SEE_BITMAP_FREE(f));
-*/
-    
-
 }
+
