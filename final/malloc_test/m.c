@@ -79,25 +79,93 @@
 #define PARTITION_END (RAMDISK_SIZE - 1)
 #define PARTITION_SIZE ((PARTITION_END + 1 - PARTITION_START))
 #define PARTITION_NUMBER (PARTITION_SIZE/BLOCK_SIZE)
+// 14 char + 2 byte short
+#define PARTITION_DIR_ENTRY_SIZE 16
+#define PARTITION_DIR_ENTRY_COUNT (BLOCK_SIZE/PARTITION_DIR_ENTRY_SIZE)
 
 /** MAXIMUM */
 #define MAX_FILE_COUNT INODE_NUMBER
 #define MAX_FILE_SIZE ((64*256)+(64*64*256)+256*8)
 
+struct Superblock {
+    int freeinode;
+    int freeblock;
+    unsigned char padding[248];
+};
+
+struct Inode {
+    char type[4];
+    int size;
+    union Block *blocks[10];
+    unsigned char padding[16];
+};
+
+struct Block_reg {
+    unsigned char byte[256];
+};
+
+struct Dir_entry {
+    // Contain in Block (type: dir)
+    char filename[14];
+    short inode_number;
+};
+
+struct Block_dir {
+    struct Dir_entry ent[16];
+};
 
 
-unsigned char *ramdisk;
-int freeblock = PARTITION_NUMBER;
-int freeinode = INODE_NUMBER;
+struct Block_ptr {
+    // Block of pointers, for large file. 4=ptr size;
+    union Block *blocks[BLOCK_SIZE/4];
+};
+
+
+union Block {
+    struct Block_reg reg;
+    struct Block_dir dir;
+    struct Block_ptr ptr;
+};
+
+struct Bitmap_block {
+    unsigned char byte[256*4];
+};
+
+struct Ramdisk{
+    struct Superblock sb;
+    struct Inode ib[INODE_NUMBER];
+    struct Bitmap_block bb;
+    union Block pb[PARTITION_NUMBER];
+};
 
 int main() {
 	printf("Load\n");
-    ramdisk = (unsigned char *)malloc(2097152);
-    if (ramdisk==NULL) {
-        printf("Malloc error\n");
-    } else {
-        printf("Malloc successful\n");
-    }
+
+    struct Ramdisk *rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
+    printf("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
+    rd->sb.freeinode = 1;
+    rd->ib[0].size = 1234;
+    union Block b;
+    b.dir.ent[0].filename[0]='a';
+    rd->pb[0] = b;
+    
+    printf("filename=%c\n", rd->pb[0].dir.ent[0].filename[0]);
+    
+    /**
+    printf("Sizeof: superblock=%d, inode block size = %d, inode=%d, #of inodes=%d, inodeblock=%d, block=%d, Dir_ent=%d, Block_dir_entry=%d, Ptr_entry=%d\n",
+           (int)sizeof(Superblock),
+           INODEBLOCK_SIZE,
+           (int)sizeof(Inode),
+           INODE_NUMBER,
+           (int)sizeof(Inodeblock),
+           (int)sizeof(Block),
+           (int)sizeof(Dir_entry),
+           (int)sizeof(Block_dir),
+           (int)sizeof(Ptr_entry));
+    */
+     
+    // INIT FILESYSTEM:
+    
     
     /**  Superblock methods
     int i=45680;
@@ -124,7 +192,7 @@ int main() {
     printf("Max_file size: %d\n", MAX_FILE_SIZE);
     */
     
-    // Test set type and set integer.
+    /* Test set type and set integer.
     int x = 10;
     SET_TYPE_DIR(x);
     printf("%s\n", &ramdisk[26]);
@@ -148,7 +216,7 @@ int main() {
     }
     printf("\n");
     
-
+     */
     
     //for (i = 0; i < BITMAPBLOCK_START; i++) {
     //    ramdisk[i] = i % 256;
