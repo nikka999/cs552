@@ -41,8 +41,8 @@ char reg[4] = "reg";
 #define PRINT_BITMAP_BYTE(BYTE); {int zzzzzz; for(zzzzzz=0; zzzzzz < 8; zzzzzz++) {printf("%d", (rd->bb.byte[BYTE] >> (7-zzzzzz)) & 0x01);} printf("\n");}
 
 #define PRINT_BITMAP_BIT_STATUS(block_number); {printf("Block %d: allocated?=%d, freed?=%d\n", block_number, SEE_BITMAP_ALLOCATE(block_number), SEE_BITMAP_FREE(block_number));}
-#define SEE_BITMAP_ALLOCATE(BLOCK) (((rd->bb.byte[GET_BYTE_NUMBER(BLOCK)] >> (7-GET_BYTE_OFFSET(BLOCK))) == 1) ? 1 : 0)
-#define SEE_BITMAP_FREE(BLOCK) (((rd->bb.byte[GET_BYTE_NUMBER(BLOCK)] >> (7-GET_BYTE_OFFSET(BLOCK))) == 0) ? 1 : 0)
+#define SEE_BITMAP_ALLOCATE(BLOCK) ((((rd->bb.byte[GET_BYTE_NUMBER(BLOCK)] >> (7-GET_BYTE_OFFSET(BLOCK))) & 0x1) == 1) ? 1 : 0)
+#define SEE_BITMAP_FREE(BLOCK) ((((rd->bb.byte[GET_BYTE_NUMBER(BLOCK)] >> (7-GET_BYTE_OFFSET(BLOCK))) & 0x1) == 0) ? 1 : 0)
 
 
 /** Partition */
