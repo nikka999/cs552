@@ -67,7 +67,7 @@ int check_for_last(int size, int ptr_count, unsigned char *file, int fb) {
     return -1;
 }
 
-int set_inode_reg_file(unsigned char *file, short inode, long int size) {
+int set_inode_reg_file(unsigned char *file, short inode, int size) {
     //printf("Size=?%ld, Max_size?=%d\n", size, MAX_FILE_SIZE);
     if (size > MAX_FILE_SIZE) {
         return -1;
@@ -100,17 +100,21 @@ int set_inode_reg_file(unsigned char *file, short inode, long int size) {
                 return 1;
             }
             WRITE_TO_FILE(fb, file);
-            
-
-            
+            ptr_count += 256;
         } else if (i > 8 && i <= 72) {
             // Single Redirection block, are block #9~72
             if(i==9) {
                 // If the first single redirection block, we need to allocate another block for that.
                 // 1. Find a free block;
+                int fb = find_free_block();
+                SET_BITMAP_ALLOCATE_BLOCK(fb);
                 // 2. Assign block to inode index 8
+                ASSIGN_LOCATION(inode, 8, fb);
                 // 3. Find another free block;
+                fb = find_free_block();
+                SET_BITMAP_ALLOCATE_BLOCK(fb);
                 // 4. Assign block to single redirection index 0
+                ASSIGN_LOCATION_SINGLE_RED(inode, 0, fb);
                 //printf("In else-if-if, i=%d\n", i);
                 DECR_FREEBLOCK; // Single redirection block
                 DECR_FREEBLOCK; // First regular block for the single redirection.
@@ -119,62 +123,85 @@ int set_inode_reg_file(unsigned char *file, short inode, long int size) {
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
-                
+                WRITE_TO_FILE(fb, file);
+                ptr_count += 256;
             } else {
                 // Else we already have the single redirection block, just allocate another block for direct file.
                 // 1. Find a free block;
+                int fb = find_free_block();
+                SET_BITMAP_ALLOCATE_BLOCK(fb);
                 // 2. Assign block to single redirection index 1~63
                 //printf("In else-if-else, i=%d\n", i-9);
+                ASSIGN_LOCATION_SINGLE_RED(inode, i-9, fb);
                 DECR_FREEBLOCK;
                 
                 if (check_for_last(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
+                WRITE_TO_FILE(fb, file);
+                ptr_count += 256;
             }
         } else if (i > 72 && i <= 4168) {
             // Double Redirection block, are block #73~4168
             if ((i-72)%64 == 1) {
                 //printf("In elseif-if, i=%d\n", i);
+                int fb;
                 if (i==73) {
                     // We need to allocate a double redirection block first for i=73
                     // 1. Find a free block;
+                    fb = find_free_block();
+                    SET_BITMAP_ALLOCATE_BLOCK(fb);
                     // 2. Assign block to inode index 9
+                    ASSIGN_LOCATION(inode, 9, fb);
                     DECR_FREEBLOCK;
-                    
-                    if (check_for_last(size, ptr_count, file, fb) == 1){
-                        PRINT_FREEBLOCK_COUNT;
-                        return 1;
-                    }
                 }
                 // No matter i=73 or not, we still need to allocate 2nd redirection block for when (i-72)%64=1; (Mod 64 because one ptr block can only have 64 ptrs. When %64=1, we know that this is a new block.)
                 // 1. Find a free block;
+                fb = find_free_block();
+                SET_BITMAP_ALLOCATE_BLOCK(fb);
                 DECR_FREEBLOCK;
                 // 2. Assign 2nd redir block to 1st redriction block index 0~63. USE: (i-72)/64 to determine index
+                ASSIGN_LOCATION_DOUBLE_FST_RED(inode, (i-72)/64, fb);
                 // 3. Find a new block.
+                // 4. Assign block to 2nd redirection (index=0)
+                //printf("In elseif-if2, i=%d\n", (i-72)/64);
+                fb = find_free_block();
+                SET_BITMAP_ALLOCATE_BLOCK(fb);
+                
+                ASSIGN_LOCATION_DOUBLE_SND_RED(inode, (i-72)/64, 0, fb);
                 DECR_FREEBLOCK;
                 
                 if (check_for_last(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
-                // 4. Assign block to 2nd redirection (index=0)
-                //printf("In elseif-if2, i=%d\n", (i-72)/64);
+                WRITE_TO_FILE(fb, file);
+                ptr_count += 256;
             } else {
                 // 1. Find new block
-                DECR_FREEBLOCK;
+                int fb = find_free_block();
+                SET_BITMAP_ALLOCATE_BLOCK(fb);
                 // 2. Find the location it should be inserted. (index=9, 1st=(i-74)/64, snd=(i-73)%64) (location should be 1~63)
                 //printf("2nd redir, 1st=%d, 2nd=%d\n", (i-74)/64, (i-73)%64);
                 // 3. Assign block to 2nd redir block;
+                ASSIGN_LOCATION_DOUBLE_SND_RED(inode, (i-74)/64, (i-73)%64, fb);
+                DECR_FREEBLOCK;
                 if (check_for_last(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
+                WRITE_TO_FILE(fb, file);
+                ptr_count += 256;
             }
         }
         i++;
     }
     PRINT_FREEBLOCK_COUNT;
+    
+}
+
+int get_inode_reg_file(short inode, int size) {
     
 }
 
