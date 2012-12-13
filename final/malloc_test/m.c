@@ -35,6 +35,7 @@ void init_fs() {
     DECR_FREEINODE; // -1 for ROOT
     // EOF init
 }
+
 int find_free_block() {
     // Find a new free block, using first-fit.
     if (SHOW_FREEBLOCK == 0) {
@@ -256,9 +257,103 @@ int get_inode_reg_file(short inode, int size, unsigned char *file) {
     return 1;
 }
 
+int find_free_inode() {
+    // Find a new free block, using first-fit.
+    if (SHOW_FREEINODE == 0) {
+        printf("Find Free inode: FREEINODE=0, returning -1 \n");
+        return -1;
+    } else {
+        int j = 0;
+        for (j; j < MAX_FILE_COUNT; j++) {
+            int f = rd->ib[j].type[0];
+            if (f == 0) {
+                //printf("%d\n", j);
+                return j;
+            }
+        }
+    }
+    printf("No free block found, ERROR\n");
+    return -1;
+}
+
+int kcreat() {
+    // kernel creat. Create a file
+    int fi = find_free_inode();
+    printf("Free inode = %d\n", fi);
+    if (fi == -1) {
+        return -1;
+    }
+    // Check pathname
+    
+    // Check if filename is already taken w/in the directory.
+    
+    
+    return 1;
+}
+
+int check_for_filename_exist(int inode, char *filename) {
+    int i=0;
+    int j=0;
+    for (i; i < 10; i++) {
+        if (i == 8) {
+            // Single redirection block
+        } else if (i == 9) {
+            // double redirection block
+        } else {
+            // Direct block pointer. 
+            for (j; j < 16; j++) {
+            }
+        }
+    }
+}
+
+int kmkdir(char *pathname) {
+    // kernel mkdir. Create a DIR
+    int fi = find_free_inode();
+    printf("Free inode = %d\n", fi);
+    if (fi == -1) {
+        return -1;
+    }
+    printf("%s\n", pathname);
+    
+    // Traverse pathname recursively find inode for subdir.
+    int ptr = 0;
+    // filename cannot exceed 13 char
+    int char_count = -1;
+    int cur = -1;
+    int dir_inode = 0; // Set for root
+    // Last occurance of '/'
+    int last_dir = 0;
+    while (cur != '\0') {
+        if (char_count == 14) {
+            // filename exceed 13 chars
+            return -1;
+        }
+        cur = *(pathname + ptr);
+        if (cur == '/') {
+            last_dir = ptr;
+            char_count = -1;
+            
+            printf("/ location=%d\n", ptr);
+        }
+        if (*(pathname + ptr + 1) == '\0') {
+            // If next cell is NULL term, then copy the name over
+            // current location is ptr;
+            if (last_dir == 0) {
+                // 1. Check for filename exist or not
+                // 2. Get free ptr_entry
+                
+            }
+        }
+        ptr++;
+        char_count++;
+    }
+}
+
 int main() {
     init_fs();
     
+    /**
     // Test write from inode
     unsigned char file[500] ="0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------====";
     int nnnnnn = set_inode_reg_file(file, 1,  sizeof(file));
@@ -269,6 +364,10 @@ int main() {
     unsigned char *file_read = (unsigned char *)malloc(file_size);
     int nnnnnm = get_inode_reg_file(1, file_size, file_read);
     printf("GET_FILE=\n%s\n", file_read);
+    */
+    
+    char *pathname = "/home";
+    kmkdir(pathname);
     
 #ifdef debug
     PRINT_FREEINODE_COUNT;

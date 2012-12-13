@@ -71,6 +71,7 @@ char reg[4] = "reg";
 // Copy only 13, leave 14th for Null.
 #define SET_DIR_ENTRY_NAME(BLOCK, ENTRY, NAME); {memcpy(rd->pb[BLOCK].dir.ent[ENTRY].filename, NAME, 13);}
 #define GET_DIR_ENTRY_NAME(BLOCK, ENTRY) rd->pb[BLOCK].dir.ent[ENTRY].filename
+#define GET_DIR_ENTRY_INODE(BLOCK, ENTRY) rd->pb[BLOCK].dir.ent[ENTRY].inode_number
 #define PRINT_DIR_ENTRY_NAME(BLOCK, ENTRY); {printf("Filename = %s\n", GET_DIR_ENTRY_NAME(BLOCK, ENTRY));}
 
 struct Superblock {
