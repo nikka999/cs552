@@ -54,7 +54,7 @@ int find_free_block() {
     return -1;
 }
 
-int check_for_last(int size, int ptr_count, unsigned char *file, int fb) {
+int check_for_last_write(int size, int ptr_count, unsigned char *file, int fb) {
     if ((size - ptr_count) <=  256) {
         // To prevent garbage in our partition block.
         // NOTE: Since we know the inode size (for reading), we can skip this step
@@ -75,10 +75,14 @@ int set_inode_reg_file(unsigned char *file, short inode, int size) {
     
     // 1st Block: 0~255; 2nd Block: 256~511; 3rd Block: 512~767; 4th Block: 768~1023; 5th Block: 1024~1279; 6th Block: 1280~1535; 7th Block: 1536~1791; 8th Block: 1792~2047; TOTAL:2048
     int number_blocks = size / 256;
+    if ((size % 256) != 0) {
+        // Increment if not multiply of 256
+        number_blocks += 1;
+    }
     int ptr_count = 0;
-#ifdef debug
+
     printf("Number of blocks=%d\n", number_blocks);
-#endif
+
     PRINT_FREEBLOCK_COUNT;
     if (number_blocks > SHOW_FREEBLOCK) {
         return -1;
@@ -95,12 +99,11 @@ int set_inode_reg_file(unsigned char *file, short inode, int size) {
             ASSIGN_LOCATION(inode, i-1, fb);
             DECR_FREEBLOCK;
             
-            if (check_for_last(size, ptr_count, file, fb) == 1){
+            if (check_for_last_write(size, ptr_count, file, fb) == 1){
                 PRINT_FREEBLOCK_COUNT;
                 return 1;
             }
             WRITE_TO_FILE(fb, file);
-            ptr_count += 256;
         } else if (i > 8 && i <= 72) {
             // Single Redirection block, are block #9~72
             if(i==9) {
@@ -119,12 +122,11 @@ int set_inode_reg_file(unsigned char *file, short inode, int size) {
                 DECR_FREEBLOCK; // Single redirection block
                 DECR_FREEBLOCK; // First regular block for the single redirection.
                 
-                if (check_for_last(size, ptr_count, file, fb) == 1){
+                if (check_for_last_write(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
                 WRITE_TO_FILE(fb, file);
-                ptr_count += 256;
             } else {
                 // Else we already have the single redirection block, just allocate another block for direct file.
                 // 1. Find a free block;
@@ -135,12 +137,11 @@ int set_inode_reg_file(unsigned char *file, short inode, int size) {
                 ASSIGN_LOCATION_SINGLE_RED(inode, i-9, fb);
                 DECR_FREEBLOCK;
                 
-                if (check_for_last(size, ptr_count, file, fb) == 1){
+                if (check_for_last_write(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
                 WRITE_TO_FILE(fb, file);
-                ptr_count += 256;
             }
         } else if (i > 72 && i <= 4168) {
             // Double Redirection block, are block #73~4168
@@ -172,12 +173,11 @@ int set_inode_reg_file(unsigned char *file, short inode, int size) {
                 ASSIGN_LOCATION_DOUBLE_SND_RED(inode, (i-72)/64, 0, fb);
                 DECR_FREEBLOCK;
                 
-                if (check_for_last(size, ptr_count, file, fb) == 1){
+                if (check_for_last_write(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
                 WRITE_TO_FILE(fb, file);
-                ptr_count += 256;
             } else {
                 // 1. Find new block
                 int fb = find_free_block();
@@ -187,32 +187,88 @@ int set_inode_reg_file(unsigned char *file, short inode, int size) {
                 // 3. Assign block to 2nd redir block;
                 ASSIGN_LOCATION_DOUBLE_SND_RED(inode, (i-74)/64, (i-73)%64, fb);
                 DECR_FREEBLOCK;
-                if (check_for_last(size, ptr_count, file, fb) == 1){
+                if (check_for_last_write(size, ptr_count, file, fb) == 1){
                     PRINT_FREEBLOCK_COUNT;
                     return 1;
                 }
                 WRITE_TO_FILE(fb, file);
-                ptr_count += 256;
             }
         }
         i++;
+        ptr_count += 256;
     }
     PRINT_FREEBLOCK_COUNT;
-    
+    return 1;
 }
 
-int get_inode_reg_file(short inode, int size) {
-    
+int check_for_last_read(int size, int ptr_count, unsigned char *file, int fb) {
+    if ((size - ptr_count) <=  256) {
+        // To prevent garbage in our partition block.
+        // NOTE: Since we know the inode size (for reading), we can skip this step
+        // but to keep our partition clean, lets do it anyway.
+        unsigned char temp[256];
+        memcpy(temp, &file[ptr_count], (size - ptr_count));
+        WRITE_TO_FILE(fb, temp);
+        return 1;
+    }
+    return -1;
+}
+
+int get_inode_reg_file(short inode, int size, unsigned char *file) {
+    //printf("Size=?%ld, Max_size?=%d\n", size, MAX_FILE_SIZE);
+    if (size > MAX_FILE_SIZE) {
+        return -1;
+    }
+    int number_blocks = size / 256;
+    if ((size % 256) != 0) {
+        // Increment if not multiply of 256
+        number_blocks += 1;
+    }
+    int ptr_count = 0;
+    int i = 1;
+    while (i <= number_blocks) {
+        if (i<=8) {
+            //printf("In first if, i=%d\n", i);
+            // Direct Block Regular File.
+            if ((size-ptr_count)<= 256) {
+                memcpy(file + ptr_count, GET_FROM_LOCATION(inode, (i-1)), (size-ptr_count));
+                return 1;
+            }
+            memcpy(file + ptr_count, GET_FROM_LOCATION(inode, (i-1)), 256);
+        } else if (i > 8 && i <= 72) {
+            // Single Redirection block, are block #9~72
+            if ((size-ptr_count)<= 256) {
+                memcpy(file + ptr_count, GET_FROM_LOCATION_SINGLE_RED(inode, (i-9)), (size-ptr_count));
+                return 1;
+            }
+            memcpy(file + ptr_count, GET_FROM_LOCATION_SINGLE_RED(inode, (i-9)), 256);
+        } else if (i > 72 && i <= 4168) {
+            // Double Redirection block, are block #73~4168
+            if ((size-ptr_count)<= 256) {
+                memcpy(file + ptr_count, GET_FROM_LOCATION_DOUBLE_RED(inode, (i-74)/64, (i-73)%64), (size-ptr_count));
+                return 1;
+            }
+            memcpy(file + ptr_count, GET_FROM_LOCATION_DOUBLE_RED(inode, (i-74)/64, (i-73)%64), 256);
+        }
+        i++;
+        ptr_count += 256;
+    }
+    return 1;
 }
 
 int main() {
     init_fs();
     
-    unsigned char file[ MAX_FILE_SIZE] ="0123456789------0123456789------0123456789------0123456789------1";
+    // Test write from inode
+    unsigned char file[500] ="0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------====";
     int nnnnnn = set_inode_reg_file(file, 1,  sizeof(file));
     printf("Size=?%d, Allocated?=%d\n", (int)sizeof(file), nnnnnn);
     printf("%s\n", GET_FROM_LOCATION(1, 0));
-    
+    // Test read from inode
+    int file_size = 500;
+    unsigned char *file_read = (unsigned char *)malloc(file_size);
+    int nnnnnm = get_inode_reg_file(1, file_size, file_read);
+    printf("GET_FILE=\n%s\n", file_read);
     
 #ifdef debug
     PRINT_FREEINODE_COUNT;
