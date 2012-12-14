@@ -6,7 +6,7 @@
 #define RD_OPEN _IOR(MAJOR_NUM, 3, char *)
 #define RD_CLOSE _IOR(MAJOR_NUM, 4, int) 
 #define RD_READ _IOR(MAJOR_NUM, 5, struct Params) //param data structure
-#define RD_WRITE _IOR(MAJOR_NUM, 6, int) //param ds
-#define RD_LSEEK _IOR(MAJOR_NUM, 7, int) //param ds
+#define RD_WRITE _IOR(MAJOR_NUM, 6, struct Params) //param ds
+#define RD_LSEEK _IOR(MAJOR_NUM, 7, struct Params) //param ds
 #define RD_UNLINK _IOR(MAJOR_NUM, 8, char *)
-#define RD_READDIR _IOR(MAJOR_NUM, 9, int) //param ds
+#define RD_READDIR _IOR(MAJOR_NUM, 9, struct Params) //param ds

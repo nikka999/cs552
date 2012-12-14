@@ -60,7 +60,7 @@ static void __exit exit_routine(void) {
 */
 
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
-	// int i;
+	int fd;
 	// int size;
 	unsigned long size;
 	char *pathname;
@@ -111,6 +111,8 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		return 0;
 		break;
 	case RD_CLOSE:
+		get_user(fd, (int)arg);
+		printk("<1> kernel: the fd is %d\n", fd);
 		break;
 	case RD_READ:
 		copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
@@ -119,8 +121,16 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		return 0;
 		break;
 	case RD_WRITE:
+		copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
+		printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
+		copy_to_user(p.addr, blah, 8); 
+		return 0;
 		break;
 	case RD_LSEEK:
+		copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
+		printk("<1> got p.fd:%d, p.byte_size:%d\n", p.fd, p.num_bytes);
+		// copy_to_user(p.addr, blah, 8); 
+		return 0;
 		break;
 	case RD_UNLINK:
 		size = strnlen_user((char *)arg, 50);
@@ -132,6 +142,10 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		return 0;
 		break;
 	case RD_READDIR:
+		copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
+		printk("<1> got p.fd:%d, p.addr: %p\n", p.fd, p.addr);
+		copy_to_user(p.addr, blah, 8); 
+		return 0;
 		break;
 	}
 
