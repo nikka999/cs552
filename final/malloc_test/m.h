@@ -74,6 +74,20 @@ char reg[4] = "reg";
 #define GET_DIR_ENTRY_INODE(BLOCK, ENTRY) rd->pb[BLOCK].dir.ent[ENTRY].inode_number
 #define PRINT_DIR_ENTRY_NAME(BLOCK, ENTRY); {printf("Filename = %s\n", GET_DIR_ENTRY_NAME(BLOCK, ENTRY));}
 
+/*IOCTL call definitions*/
+#define MAJOR_NUM 155
+
+#define RD_MALLOC _IOR(MAJOR_NUM, 0, int)
+#define RD_CREAT _IOR(MAJOR_NUM, 1, char *)
+#define RD_MKDIR _IOR(MAJOR_NUM, 2, char *)
+#define RD_OPEN _IOR(MAJOR_NUM, 3, char *)
+#define RD_CLOSE _IOR(MAJOR_NUM, 4, int) 
+#define RD_READ _IOR(MAJOR_NUM, 5, int) //param data structure
+#define RD_WRITE _IOR(MAJOR_NUM, 6, int) //param ds
+#define RD_LSEEK _IOR(MAJOR_NUM, 7, int) //param ds
+#define RD_UNLINK _IOR(MAJOR_NUM, 8, char *)
+#define RD_READDIR _IOR(MAJOR_NUM, 9, int) //param ds
+
 struct Superblock {
     int freeinode;
     int freeblock;

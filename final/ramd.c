@@ -53,7 +53,7 @@ static void __exit exit_routine(void) {
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
 	// int i;
 	// int size;
-
+	char *pathname;
 	/* 
 	 * Switch according to the ioctl called 
 	 */
@@ -70,6 +70,26 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		// vmalloc for 2MB
 		ramdisk = (unsigned char *)vmalloc(2097150);
 		printk("<1>I finished vmalloc!\n");
+		break;
+	case RD_CREAT:
+		get_user(pathname, (char *)arg);
+		printk("<1> kernel got: %s\n",pathname);
+		break;
+	case RD_MKDIR:
+		break;
+	case RD_OPEN:
+		break;
+	case RD_CLOSE:
+		break;
+	case RD_READ:
+		break;
+	case RD_WRITE:
+		break;
+	case RD_LSEEK:
+		break;
+	case RD_UNLINK:
+		break;
+	case RD_READDIR:
 		break;
 	}
 
