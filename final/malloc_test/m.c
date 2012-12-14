@@ -55,6 +55,42 @@ int find_free_block() {
     return -1;
 }
 
+// ================================IMPLEMENT ME========================================================
+int check_pathname (char *pathname, char* last) {
+    // Traverse pathname recursively find inode for subdir.
+    int ptr = 0;
+    // filename cannot exceed 13 char
+    int char_count = -1;
+    int cur = -1;
+    int dir_inode = 0; // Set for root
+    // Last occurance of '/'
+    int last_dir = 0;
+    while (cur != '\0') {
+        if (char_count == 14) {
+            // filename exceed 13 chars
+            return -1;
+        }
+        cur = *(pathname + ptr);
+        if (cur == '/') {
+            last_dir = ptr;
+            char_count = -1;
+            
+            printf("/ location=%d\n", ptr);
+        }
+        if (*(pathname + ptr + 1) == '\0') {
+            // If next cell is NULL term, then copy the name over
+            // current location is ptr;
+            if (last_dir == 0) {
+                // 1. Check for filename exist or not
+                // 2. Get free ptr_entry
+                
+            }
+        }
+        ptr++;
+        char_count++;
+    }
+}
+
 int check_for_last_write(int size, int ptr_count, unsigned char *file, int fb) {
     if ((size - ptr_count) <=  256) {
         // To prevent garbage in our partition block.
@@ -316,38 +352,7 @@ int kmkdir(char *pathname) {
     }
     printf("%s\n", pathname);
     
-    // Traverse pathname recursively find inode for subdir.
-    int ptr = 0;
-    // filename cannot exceed 13 char
-    int char_count = -1;
-    int cur = -1;
-    int dir_inode = 0; // Set for root
-    // Last occurance of '/'
-    int last_dir = 0;
-    while (cur != '\0') {
-        if (char_count == 14) {
-            // filename exceed 13 chars
-            return -1;
-        }
-        cur = *(pathname + ptr);
-        if (cur == '/') {
-            last_dir = ptr;
-            char_count = -1;
-            
-            printf("/ location=%d\n", ptr);
-        }
-        if (*(pathname + ptr + 1) == '\0') {
-            // If next cell is NULL term, then copy the name over
-            // current location is ptr;
-            if (last_dir == 0) {
-                // 1. Check for filename exist or not
-                // 2. Get free ptr_entry
-                
-            }
-        }
-        ptr++;
-        char_count++;
-    }
+
 }
 
 int main() {
