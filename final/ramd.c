@@ -111,7 +111,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		return 0;
 		break;
 	case RD_CLOSE:
-		get_user(fd, (int)arg);
+		get_user(fd, (int *)arg);
 		printk("<1> kernel: the fd is %d\n", fd);
 		break;
 	case RD_READ:

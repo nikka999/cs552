@@ -33,7 +33,7 @@ int main () {
   // ioctl_test.field1 = 10;
   // ioctl_test.field2 = 'a';
 	char face[10];
-	int sd = 5;
+	int sd = 8;
 	int bz = 10;
 	Params p;
 	p.fd = sd;
@@ -43,7 +43,7 @@ int main () {
 	s = "very nice!!";
 	printf("about to send out %s\n",s);
 	int rc;	
-  	rc = ioctl (fd, RD_CLOSE, sd);
+  	rc = ioctl (fd, RD_CLOSE, &sd);
 	printf("this was the return: %d\n",rc);
 	// printf("this is p.addr: %s\n", p.addr);
 
