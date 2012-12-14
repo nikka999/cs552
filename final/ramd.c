@@ -3,6 +3,9 @@
 #include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <asm/uaccess.h>
 #include "ramd.h"
 
 MODULE_LICENSE("GPL");
@@ -11,6 +14,12 @@ static unsigned char *ramdisk;
 static struct proc_dir_entry *proc_entry;
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg);
 static struct file_operations proc_operations;
+
+struct Params {
+	int fd;
+	char* addr;
+	int num_bytes;
+};
 
 static int __init init_routine(void) {
 	printk("<1> Loading RAMDISK Module\n");
@@ -53,7 +62,10 @@ static void __exit exit_routine(void) {
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
 	// int i;
 	// int size;
+	unsigned long size;
 	char *pathname;
+	struct Params p;
+	char blah[8] = "bigfoot";
 	/* 
 	 * Switch according to the ioctl called 
 	 */
@@ -72,22 +84,52 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		printk("<1>I finished vmalloc!\n");
 		break;
 	case RD_CREAT:
-		get_user(pathname, (char *)arg);
+		size = strnlen_user((char *)arg, 50);
+		pathname = (char *)kmalloc(size,GFP_KERNEL);
+		copy_from_user(pathname, (char *)arg, size);
 		printk("<1> kernel got: %s\n",pathname);
+		printk("<1> the len is %lu\n", size);
+		kfree(pathname);
+		return 0;
 		break;
 	case RD_MKDIR:
+		size = strnlen_user((char *)arg, 50);
+		pathname = (char *)kmalloc(size,GFP_KERNEL);
+		copy_from_user(pathname, (char *)arg, size);
+		printk("<1> kernel got: %s\n",pathname);
+		printk("<1> the len is %lu\n", size);
+		kfree(pathname);
+		return 0;
 		break;
 	case RD_OPEN:
+		size = strnlen_user((char *)arg, 50);
+		pathname = (char *)kmalloc(size,GFP_KERNEL);
+		copy_from_user(pathname, (char *)arg, size);
+		printk("<1> kernel got: %s\n",pathname);
+		printk("<1> the len is %lu\n", size);
+		kfree(pathname);
+		return 0;
 		break;
 	case RD_CLOSE:
 		break;
 	case RD_READ:
+		copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
+		printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
+		copy_to_user(p.addr, blah, 8); 
+		return 0;
 		break;
 	case RD_WRITE:
 		break;
 	case RD_LSEEK:
 		break;
 	case RD_UNLINK:
+		size = strnlen_user((char *)arg, 50);
+		pathname = (char *)kmalloc(size,GFP_KERNEL);
+		copy_from_user(pathname, (char *)arg, size);
+		printk("<1> kernel got: %s\n",pathname);
+		printk("<1> the len is %lu\n", size);
+		kfree(pathname);
+		return 0;
 		break;
 	case RD_READDIR:
 		break;
