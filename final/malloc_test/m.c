@@ -56,7 +56,7 @@ int find_free_block() {
 }
 
 // ================================IMPLEMENT ME========================================================
-int check_pathname (char *pathname, char* last) {
+int check_pathname (char *pathname, char* last, short* super_inode) {
     // Traverse pathname recursively find inode for subdir.
     int ptr = 0;
     // filename cannot exceed 13 char
@@ -352,7 +352,18 @@ int kmkdir(char *pathname) {
     }
     printf("%s\n", pathname);
     
-
+    // Check_pathname and get last entry.
+    char *last = (char *)malloc(14);
+#ifdef fin
+    if (check_pathname(pathname, last) == -1) {
+        // Pathname failed. 
+        return -1;
+    }
+#endif
+    last = "home";
+    printf("%s\n", last);
+    
+    
 }
 
 int main() {
