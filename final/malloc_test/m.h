@@ -25,6 +25,11 @@ char reg[4] = "reg";
 #define SET_INODE_SIZE(INDEX, SIZE); {rd->ib[INDEX].size = SIZE;}
 #define GET_INODE_LOCATION_BLOCK(INDEX, BLOCK) rd->ib[INDEX].blocks[BLOCK]
 #define SET_INODE_LOCATION_BLOCK(INDEX, BLOCK, PBLOCK); {rd->ib[INDEX].blocks[BLOCK] = &rd->pb[PBLOCK];} 
+// For direct inode block BLOCK=0~7
+#define GET_INODE_FROM_INODE_LOCATION(INODE, INDEX, ENT) ((*rd->ib[INODE].blocks[INDEX]).dir.ent[ENT].inode_number)
+// For single redirection block BLOCK = 8
+// For double redirection block BLOCK = 9
+
 
 /** General methods */
 // Create 1 on bit y (all others 0)
@@ -71,9 +76,10 @@ char reg[4] = "reg";
 
 // Copy only 13, leave 14th for Null.
 #define SET_DIR_ENTRY_NAME(BLOCK, ENTRY, NAME); {memcpy(rd->pb[BLOCK].dir.ent[ENTRY].filename, NAME, 13);}
+#define SET_DIR_ENTRY_INODE(BLOCK, ENTRY, INODE); {rd->pb[BLOCK].dir.ent[ENTRY].inode_number = INODE; }
 #define GET_DIR_ENTRY_NAME(BLOCK, ENTRY) rd->pb[BLOCK].dir.ent[ENTRY].filename
 #define GET_DIR_ENTRY_INODE(BLOCK, ENTRY) rd->pb[BLOCK].dir.ent[ENTRY].inode_number
-#define PRINT_DIR_ENTRY_NAME(BLOCK, ENTRY); {printf("Filename = %s\n", GET_DIR_ENTRY_NAME(BLOCK, ENTRY));}
+#define PRINT_DIR_ENTRY(BLOCK, ENTRY); {printf("Filename = %s, Inode = %d\n", GET_DIR_ENTRY_NAME(BLOCK, ENTRY), GET_DIR_ENTRY_INODE(BLOCK, ENTRY));}
 
 /*IOCTL call definitions*/
 #define MAJOR_NUM 155
