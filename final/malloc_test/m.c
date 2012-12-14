@@ -13,29 +13,6 @@
 short fd_table[1024];
 struct Ramdisk *rd;
 
-void init_fs() {
-    printf("INIT\n");
-    // INIT FILESYSTEM:
-    rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
-    printf("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
-    // Setting up root
-    SET_INODE_TYPE_DIR(0);
-    //printf("type=%s\n", rd->ib[0].type);
-    SET_INODE_SIZE(0, 0);
-    //printf("size=%d\n", rd->ib[0].size);
-    union Block root;
-    // This is DIR block for future subfile for root.
-    rd->pb[0]=root;
-    rd->ib[0].blocks[0]=&root;
-    INIT_FREEINODE;
-    INIT_FREEBLOCK;
-    // Mark bitmap for root
-    SET_BITMAP_ALLOCATE_BLOCK(0);
-    DECR_FREEBLOCK; // -1 for ROOT
-    DECR_FREEINODE; // -1 for ROOT
-    // EOF init
-}
-
 int find_free_block() {
     // Find a new free block, using first-fit.
     if (SHOW_FREEBLOCK == 0) {
@@ -54,6 +31,27 @@ int find_free_block() {
     printf("No free block found, ERROR\n");
     return -1;
 }
+
+void init_fs() {
+    printf("INIT\n");
+    // INIT FILESYSTEM:
+    rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
+    printf("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
+    // Setting up root
+    SET_INODE_TYPE_DIR(0);
+    //printf("type=%s\n", rd->ib[0].type);
+    SET_INODE_SIZE(0, 0);
+    //printf("size=%d\n", rd->ib[0].size);
+    // DONT ALLOCATE PARTITION BLOCK FOR ROOT NOW. DO IT WHEN IT IS NEEDED
+    INIT_FREEINODE;
+    INIT_FREEBLOCK;
+    // Mark bitmap for root
+    SET_BITMAP_ALLOCATE_BLOCK(0);
+    DECR_FREEBLOCK; // -1 for ROOT
+    DECR_FREEINODE; // -1 for ROOT
+    // EOF init
+}
+
 
 // ================================IMPLEMENT ME========================================================
 int check_pathname (char *pathname, char* last, short* super_inode) {
@@ -312,6 +310,34 @@ int find_free_inode() {
     return -1;
 }
 
+int insert_inode(short super_inode, short new_inode) {
+    // Loop through super_inode LOC ptr.
+    int i = 0; // Location blocks
+    while(i < 10) {
+        // If there is allocated block?
+        if (GET_INODE_LOCATION_BLOCK(super_inode, i) == 0) {
+            printf("i = %d, is empty\n", i);
+            // Allocate partition blocks for super_inode
+            int fb = find_free_block();
+            // Assign free block to super_inode location i.
+            SET_INODE_LOCATION_BLOCK(super_inode, i, fb);
+            if (i >= 0 && i <= 7) {
+                // 1~ 7 is direct block
+                
+            } else if (i == 8) {
+                // 8 is single redirection block
+            } else if (i == 9) {
+                // 9 is double redirection block
+            }
+        } else {
+            // Block already allocated. Loop though all blocks to find a free entry
+            // First-fit here as well. 
+            
+        }
+        i++;
+    }
+}
+
 int kcreat() {
     // kernel creat. Create a file
     int fi = find_free_inode();
@@ -354,16 +380,26 @@ int kmkdir(char *pathname) {
     
     // Check_pathname and get last entry.
     char *last = (char *)malloc(14);
+    short super_inode;
 #ifdef fin
-    if (check_pathname(pathname, last) == -1) {
+    if (check_pathname(pathname, last, &super_inode) == -1) {
         // Pathname failed. 
         return -1;
     }
 #endif
     last = "home";
-    printf("%s\n", last);
+    super_inode = 0;
+    printf("%s, super=%d\n", last, super_inode);
     
-    
+    // Create directory
+    // 1. Find a new free inode. DONE ABOVE
+    // 2. Assign type as dir. size=0. DO NOT ALLOCATE NEW BLOCK.
+    SET_INODE_TYPE_DIR(fi);
+    SET_INODE_SIZE(fi, 0);
+    // 3. Assign new inode to super inode.
+
+    insert_inode(super_inode, fi);
+   
 }
 
 int main() {
