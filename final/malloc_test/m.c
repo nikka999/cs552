@@ -1002,8 +1002,10 @@ int main() {
 
     
     int i = kopen(path2);
+	char *content = "im writing some stuff!";
+	kwrite(i, content, strlen(content)+1);
     char *add= (char *)malloc(16);
-    kreaddir(i, add);
+    kreaddir(0, add);
     
     printf("read dir returned: \n");
     int ij = 0;
