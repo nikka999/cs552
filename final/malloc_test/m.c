@@ -1016,7 +1016,12 @@ int main() {
     
     int i = kopen(path2);
 	char *content = "im writing some stuff!";
-	kwrite(i, content, strlen(content)+1);
+	int ss = strlen(content)+1;
+	kwrite(i, content, ss);
+	char *stuff;
+	stuff = (char *)malloc(ss);
+	kread(i, stuff, ss);
+	printf("i just read this: %s\n", stuff);
     char *add= (char *)malloc(16);
     kreaddir(0, add);
     
