@@ -1025,9 +1025,8 @@ int kreaddir(int fd, char *address) {
 
 int main() {
     init_fs();
-    int partition_block_location;
-    partition_block_location = (int)&(rd->pb[0]);
-    printf("Partition block starting point: %d\n", partition_block_location);
+    unsigned char *partition_block_location = (&rd->bb.byte);
+    printf("Partition block starting point: %d\n", *(char *)partition_block_location);
     
     int zz = 0;
     for (zz; zz < 256; zz++) {
