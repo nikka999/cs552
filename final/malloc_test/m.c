@@ -581,6 +581,71 @@ int kmkdir(char *pathname) {
     return 0;
 }
 
+int build_inode_structure(short inode, unsigned char *ist) {
+    /**
+     * This function can be use for kread, kwrite, kreaddir
+     * build the entire inode structure first, then go to offest. 
+     */
+    // Traverse through all possible location
+    int i = 0; // Location blocks
+    int position = 0; // Position can also be used as a counter for size.
+    while(i < 10) {
+        // If there is allocated block?
+        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
+            printf("i = %d, is empty\n", i);
+            // No allocated block at i, we can return.
+            return position;
+        } else {
+            // Block already allocated. Loop though all blocks and build inode structure
+            if (i >= 0 && i <= 7) {
+                // 1~ 7 is direct block
+                // Since there is a block allocated, we can just copy the entire block.
+                memcpy((ist + position), GET_INODE_LOCATION_BLOCK(inode, i), 256);
+                position += 256;
+            } else if (i == 8) {
+                // 8 is single redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the redirection block, j is PTR_ENTRY
+                    if (GET_INODE_LOCATION_BLOCK_SIN(inode, j) == 0) {
+                        // If it equals 0, then there are NO Dir block allocated.
+                        return position;
+                    } else {
+                        // A dir block is allocated
+                        memcpy((ist + position), GET_INODE_LOCATION_BLOCK_SIN(inode, j), 256);
+                        position += 256;
+                    }
+                }
+            } else if (i == 9) {
+                // 9 is double redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the first redirection block, j is PTR_ENT1
+                    if (GET_INODE_LOCATION_BLOCK_DOB_FST(inode, j) == 0) {
+                        // There is no second redirection block.
+                        return position;
+                    } else {
+                        // There is a second redirection block.
+                        int k = 0;
+                        for (k; k < (256/4); k++) {
+                            // Loop through the second redirection block, k is PTR_ENT2
+                            if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
+                                // There is no Directory block
+                                return position;
+                            } else {
+                                // There is a Directory block
+                                memcpy((ist + position), GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k), 256);
+                                position += 256;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i++;
+    }
+    return position;
+}
 
 int kopen(char *pathname) {
 #ifdef debug
@@ -629,6 +694,33 @@ int kclose(int fd) {
     return 0;
 }
 
+int read_file(short inode, int read_pos, int num_bytes, unsigned char *temp) {
+    // Build the inode structure first.
+    unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
+    int size = build_inode_structure(inode, ist);
+#ifdef debug
+    printf("size = %d\n", size);
+#endif
+    if (size == 0) {
+        return 0;
+    }
+    if (read_pos >= (size - 1)) {
+        // Read_pos is greater then possible size
+        return -1;
+    }
+    if ((read_pos + num_bytes) > (size - 1)) {
+        // Not enough bytes for us to read, read what is possible.
+        memcpy(temp, ist + read_pos, (size - read_pos));
+        return (size - read_pos);
+    } else {
+        // Enough byte for us to read.
+        memcpy(temp, ist + read_pos, num_bytes);
+        return num_bytes;
+    }
+    // Error if reach here.
+    return -1;
+}
+
 int kread(int fd, char *address, int num_bytes) {
     // Again, fd=inode index
     if (fd_table[fd] == NULL) {
@@ -638,9 +730,20 @@ int kread(int fd, char *address, int num_bytes) {
     // Check if it is a regular file
     if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
         // Read num_bytes TO ADDRESS location
+        unsigned char *temp = (unsigned char *)malloc(sizeof(num_bytes));
+        int ret = read_file(fd, fd_table[fd]->read_pos, num_bytes, temp);
+        if (ret == -1) {
+            return -1;
+        }
+        if (ret == 0) {
+            // no byte read
+            return 0;
+        }
+        memcpy(address, temp, ret);
         
-        
+        // COPY TO USER SPACE
         // return number of bytes actually read
+        return ret;
     } else {
         // Not a regular file
         return -1;
@@ -687,68 +790,6 @@ int kunlink(char *pathname) {
 
 }
 
-int build_inode_structure(short inode, unsigned char *ist) {
-    // Traverse through all possible location
-    int i = 0; // Location blocks
-    int position = 0; // Position can also be used as a counter for size.
-    while(i < 10) {
-        // If there is allocated block?
-        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
-            printf("i = %d, is empty\n", i);
-            // No allocated block at i, we can return. 
-            return position;
-        } else {
-            // Block already allocated. Loop though all blocks and build inode structure
-            if (i >= 0 && i <= 7) {
-                // 1~ 7 is direct block
-                // Since there is a block allocated, we can just copy the entire block. 
-                memcpy((ist + position), GET_INODE_LOCATION_BLOCK(inode, i), 256);
-                position += 256;
-            } else if (i == 8) {
-                // 8 is single redirection block
-                int j = 0;
-                for (j; j < (256/4); j++) {
-                    // Loop through the redirection block, j is PTR_ENTRY
-                    if (GET_INODE_LOCATION_BLOCK_SIN(inode, j) == 0) {
-                        // If it equals 0, then there are NO Dir block allocated.
-                        return position;
-                    } else {
-                        // A dir block is allocated
-                        memcpy((ist + position), GET_INODE_LOCATION_BLOCK_SIN(inode, j), 256);
-                        position += 256;
-                    }
-                }
-            } else if (i == 9) {
-                // 9 is double redirection block
-                int j = 0;
-                for (j; j < (256/4); j++) {
-                    // Loop through the first redirection block, j is PTR_ENT1
-                    if (GET_INODE_LOCATION_BLOCK_DOB_FST(inode, j) == 0) {
-                        // There is no second redirection block.
-                        return position;
-                    } else {
-                        // There is a second redirection block.
-                        int k = 0;
-                        for (k; k < (256/4); k++) {
-                            // Loop through the second redirection block, k is PTR_ENT2
-                            if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
-                                // There is no Directory block
-                                return position;
-                            } else {
-                                // There is a Directory block
-                                memcpy((ist + position), GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k), 256);
-                                position += 256;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        i++;
-    }
-    return position;
-}
-
 int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     // Read 1 dir_entry
     // Build the inode structure first.
@@ -776,7 +817,7 @@ int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
         } else {
             memcpy(temp_add, d, 16);
             // set the position to the next entry
-            fd_table[fd]->read_pos = (read_pos + 16);
+            fd_table[inode]->read_pos = (read_pos + 16);
             return 1;
         }
     }
@@ -923,8 +964,6 @@ int main() {
 #endif    
 
     // Test freeing a block. directly
-    
-
 
 }
 
