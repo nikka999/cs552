@@ -88,7 +88,7 @@ int get_inode_index (int node, char *pathname) {
 }
 
 
-
+//checks if pathname exists, -1 if error, 0 if does not exists, >0 if does exists
 int check_pathname (char *pathname, char* last, short* super_inode) {
 	char name[14];
 	char *slash;
@@ -133,7 +133,7 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	*super_inode = node_index;
 	//if returns something other than -1, it means that this pathname already exits
 	if (current_index > 0)
-		return -2;
+		return current_index;
 	return 0;
 }
 
@@ -414,7 +414,7 @@ int kmkdir(char *pathname) {
     char *last = (char *)malloc(14);
     short super_inode;
 
-    if (check_pathname(pathname, last, &super_inode) < 0) {
+    if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
 		printf("pathname: %s, already exists\n", pathname);
         return -1;
@@ -512,16 +512,15 @@ int kopen(char *pathname) {
     // Check_pathname and get last entry
     char *last = (char *)malloc(14);
     short super_inode;
-#ifdef fin
-    if (check_pathname(pathname, last, &super_inode) == -1) {
+	int inode;
+    if ((inode = check_pathname(pathname, last, &super_inode)) < 1) {
         // Pathname failed.
         return -1;
     }
-#endif
     // 1. Find inode number for file within super_inode
-    int temp_inode = 0;
+    // int temp_inode = 0;
 
-    int inode = temp_inode;
+    // int inode = temp_inode;
     // 2. Check if fd_table is active. 
     if (fd_table[inode] == NULL) {
         struct fd* newfd;
@@ -907,7 +906,7 @@ int kunlink(char *pathname) {
         // File exist, we can strart to remove
         // Get inode number
         int inode = retp;
-        if (memcmp(dir, GET_INODE_TYPE(fd), 3) == 0) {
+        if (memcmp(dir, GET_INODE_TYPE(inode), 3) == 0) {
             // Check if it is a DIR file
             if (GET_INODE_SIZE(inode) != 0) {
                 // removing non-empty directory.
@@ -918,7 +917,7 @@ int kunlink(char *pathname) {
                 // 2. Go to super_inode and remove inode entry
             }
         }
-        if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        if (memcmp(reg, GET_INODE_TYPE(inode), 3) == 0) {
             // Check if it is a reg file
             // 1. Get file size
             // 2. remove file
