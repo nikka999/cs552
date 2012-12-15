@@ -310,6 +310,7 @@ int find_free_inode() {
     return -1;
 }
 
+
 int insert_inode(short super_inode, short new_inode, char *filename) {
     // Loop through super_inode LOC ptr.
     int i = 0; // Location blocks
@@ -336,6 +337,7 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 ASSIGN_LOCATION_SINGLE_RED(super_inode, 0, fb2);
                 SET_DIR_ENTRY_NAME(fb2, 0, filename);
                 SET_DIR_ENTRY_INODE(fb2, 0, new_inode);
+                return 1;
             } else if (i == 9) {
                 // 9 is double redirection block
                 // Treat previously allocated block as a ptr block
@@ -348,6 +350,7 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 ASSIGN_LOCATION_DOUBLE_SND_RED(super_inode, 0, 0, fb3);
                 SET_DIR_ENTRY_NAME(fb3, 0, filename);
                 SET_DIR_ENTRY_INODE(fb3, 0, new_inode);
+                return 1;
             }
         } else {
             // Block already allocated. Loop though all blocks to find a free entry
@@ -365,20 +368,118 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                         PRINT_INODE_FROM_INODE_LOCATION(super_inode, i, j);
                         return 1;
                     }
+#ifdef debug
+                    printf("No free in #%d direct block\n", i);
+#endif
                 }
-                // No free in 'i' direct block
+#ifdef debug
+                printf("No free in ALL direct block\n");
+#endif
             } else if (i == 8) {
-                
                 // 8 is single redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the redirection block, j is PTR_ENTRY
+                    if (GET_INODE_LOCATION_BLOCK_SIN(super_inode, j) == 0) {
+                        // If it equals 0, then there are NO Dir block allocated.
+                        // 1. Allocate a new Partition block for Dir block.
+                        int fb = find_free_block();
+                        // 2. Assign new block index[8].blocks[j];
+                        ASSIGN_LOCATION_SINGLE_RED(super_inode, j, fb);
+                        SET_DIR_ENTRY_NAME(fb, 0, filename);
+                        SET_DIR_ENTRY_INODE(fb, 0, new_inode);
+                        PRINT_INODE_FROM_INODE_LOCATION_SIN(super_inode, j, 0);
+                        return 1;
+                    } else {
+                        // A dir block is present, loop through to find free location
+                        int k = 0;
+                        for (k; k < 16; k++) {
+                            // Loop through the Dir Block
+                            if (GET_INODE_FROM_INODE_LOCATION_SIN_INODE(super_inode, j, k) == 0) {
+                            printf("Free location. Inode = %d, Location index = %d, Ptr_entry = %d, Dir_entry index = %d\n", super_inode, i, j, k);
+                            }
+                            SET_INODE_FROM_INODE_LOCATION_SIN_INODE(super_inode, j, k, new_inode);
+                            SET_INODE_FROM_INODE_LOCATION_SIN_FILENAME(super_inode, j, k, filename);
+                            PRINT_INODE_FROM_INODE_LOCATION_SIN(super_inode, j, k);
+                            return 1;
+                        }
+                    }
+#ifdef debug
+                    printf("No free in PTR_ENT = %d, single redirection block\n", j);
+#endif
+                }
+#ifdef debug
+                printf("No free in ALL single redirection block\n");
+#endif
             } else if (i == 9) {
                 // 9 is double redirection block
-            } 
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the first redirection block, j is PTR_ENT1
+                    if (GET_INODE_LOCATION_BLOCK_DOB_FST(super_inode, j) == 0) {
+                        // There is no second redirection block.
+                        // 1. Find free block and Assign Second redirection block.
+                        int fb = find_free_block();
+                        ASSIGN_LOCATION_DOUBLE_FST_RED(super_inode, j, fb);
+                        // 2. Find free block and Assign to Sec for Directory block.
+                        int fb2 = find_free_block();
+                        ASSIGN_LOCATION_DOUBLE_SND_RED(super_inode, j, 0, fb2);
+                        // 3. Insert new inode
+                        SET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, 0, 0, new_inode);
+                        SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(super_inode, j, 0, 0, filename);
+                        PRINT_INODE_FROM_INODE_LOCATION_DOB(super_inode, j, 0, 0);
+                        return 1;
+                    } else {
+                        // There is a second redirection block.
+                        int k = 0;
+                        for (k; k < (256/4); k++) {
+                            // Loop through the second redirection block, k is PTR_ENT2
+                            if (GET_INODE_LOCATION_BLOCK_DOB_SND(super_inode, j, k) == 0) {
+                                // There is no Directory block
+                                // 1. Find free block and Assign to second redirection block.
+                                int fb = find_free_block();
+                                ASSIGN_LOCATION_DOUBLE_SND_RED(super_inode, j, k, fb);
+                                // 2. Insert new inode
+                                SET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, k, 0, new_inode);
+                                SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(super_inode, j, k, 0, filename);
+                                PRINT_INODE_FROM_INODE_LOCATION_DOB(super_inode, j, k, 0);
+                                return 1;
+                            } else {
+                                // There is a Directory block
+                                int l = 0;
+                                for (l; l < 16; l++) {
+                                    // l is ENT
+                                    // Loop through Directory block to find a free entry
+                                    if (GET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, k, l) == 0) {
+                                        printf("Free location. Inode = %d, Location index = %d, Ptr_entry1 = %d, PTR_ENT2=%d, Dir_entry index = %d\n", super_inode, i, j, k, l);
+                                        SET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, k, l, new_inode);
+                                        SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(super_inode, j, k, l, filename);
+                                        PRINT_INODE_FROM_INODE_LOCATION_DOB(super_inode, j, k, l);
+                                        return 1;
+                                    }
+                                }
+                            }
+#ifdef debug
+                            printf("No free in PTR_ENT1=%d, PTR_ENT2=%d double redirection block\n", j, k);
+#endif
+                        }
+                    }
+#ifdef debug
+                    printf("No free in PTR_ENT1=%d double redirection block\n", j);
+#endif
+                }
+#ifdef debug
+                printf("No free in ALL double redirection block\n");
+#endif
+            }
         }
         i++;
     }
     // cannot find a free directory entry
     return -1;
 }
+
+
 
 int kcreat() {
     // kernel creat. Create a file
@@ -475,7 +576,7 @@ int main() {
     // test set filename
     char n[16] = "non-root";
     SET_DIR_ENTRY_NAME(0, 0, n);
-    PRINT_DIR_ENTRY_NAME(0, 0);
+    //PRINT_DIR_ENTRY_NAME(0, 0);
 
     // test write to reg file block
     unsigned char x[260] = "testing=testing2=testing3";
