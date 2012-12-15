@@ -88,7 +88,7 @@ int get_inode_index (int node, char *pathname) {
 }
 
 
-
+//checks if pathname exists, -1 if error, 0 if does not exists, >0 if does exists
 int check_pathname (char *pathname, char* last, short* super_inode) {
 	char name[14];
 	char *slash;
@@ -133,7 +133,7 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	*super_inode = node_index;
 	//if returns something other than -1, it means that this pathname already exits
 	if (current_index > 0)
-		return -2;
+		return current_index;
 	return 0;
 }
 
@@ -407,22 +407,18 @@ int kmkdir(char *pathname) {
     if (fi == -1) {
         return -1;
     }
-// #ifdef debug
     printf("%s\n", pathname);
-// #endif
+
     
     // Check_pathname and get last entry
     char *last = (char *)malloc(14);
     short super_inode;
-// #ifdef fin
-    if (check_pathname(pathname, last, &super_inode) < 0) {
+
+    if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
 		printf("pathname: %s, already exists\n", pathname);
         return -1;
     }
-// #endif
-    // memcpy(last, "home", 5);
-    // super_inode = 0;
     printf("%s, super=%d\n", last, super_inode);
     
 #ifdef debug
@@ -516,16 +512,15 @@ int kopen(char *pathname) {
     // Check_pathname and get last entry
     char *last = (char *)malloc(14);
     short super_inode;
-#ifdef fin
-    if (check_pathname(pathname, last, &super_inode) == -1) {
+	int inode;
+    if ((inode = check_pathname(pathname, last, &super_inode)) < 1) {
         // Pathname failed.
         return -1;
     }
-#endif
     // 1. Find inode number for file within super_inode
-    int temp_inode = 0;
+    // int temp_inode = 0;
 
-    int inode = temp_inode;
+    // int inode = temp_inode;
     // 2. Check if fd_table is active. 
     if (fd_table[inode] == NULL) {
         struct fd* newfd;
@@ -895,7 +890,41 @@ int klseek(int fd, int offset) {
 }
 
 int kunlink(char *pathname) {
-
+    if (pathname[0] == '/' && pathname[1] == '\0') {
+        // trying to unlink root
+        return -1;
+    }
+    char *last = (char *)malloc(14);
+    short super_inode;
+    int retp = check_pathname(pathname, last, &super_inode);
+    printf("retp = %d\n", retp);
+    if (retp == 0 || retp == -1) {
+        // does not exist file or error
+        return -1;
+    }
+    if (retp > 0) {
+        // File exist, we can strart to remove
+        // Get inode number
+        int inode = retp;
+        if (memcmp(dir, GET_INODE_TYPE(inode), 3) == 0) {
+            // Check if it is a DIR file
+            if (GET_INODE_SIZE(inode) != 0) {
+                // removing non-empty directory.
+                return -1; 
+            } else {
+                // file size = 0
+                // 1. Remove dir
+                // 2. Go to super_inode and remove inode entry
+            }
+        }
+        if (memcmp(reg, GET_INODE_TYPE(inode), 3) == 0) {
+            // Check if it is a reg file
+            // 1. Get file size
+            // 2. remove file
+            // 3. Go to super_inode and remove inode entry
+            // 4. Traverse filesystem and minus file_size on all super inodes.
+        }
+    }
 }
 
 int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
@@ -990,6 +1019,8 @@ int main() {
     SET_INODE_LOCATION_BLOCK(0, 0, fb);
     //
     
+    //check_pathname(char *pathname, char* last, short* super_inode)
+    
     char *pathname = "/home";
     kmkdir(pathname);
     printf("%d\n", get_inode_index(0, "home"));
@@ -999,7 +1030,6 @@ int main() {
     char *path2 = "/home/test";
     kcreat(path2);
     printf("%d\n", get_inode_index(1, "test"));
-    
 
     
     //unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
