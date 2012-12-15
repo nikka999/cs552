@@ -20,6 +20,7 @@
 #define INODE_NUMBER (INODEBLOCK_SIZE/INODE_SIZE)
 char dir[4] = "dir";
 char reg[4] = "reg";
+#define GET_INODE_TYPE(INDEX) (rd->ib[INDEX].type)
 #define SET_INODE_TYPE_DIR(INDEX); {memcpy(rd->ib[INDEX].type, dir, 4);}
 #define SET_INODE_TYPE_REG(INDEX); {memcpy(rd->ib[INDEX].type, reg, 4);}
 #define SET_INODE_SIZE(INDEX, SIZE); {rd->ib[INDEX].size = SIZE;}

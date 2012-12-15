@@ -624,15 +624,57 @@ int kclose(int fd) {
 }
 
 int kread(int fd, char *address, int num_bytes) {
-    
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a regular file
+    if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        // Read num_bytes
+        
+        
+        // return number of bytes actually read
+    } else {
+        // Not a regular file
+        return -1;
+    }
 }
 
 int kwrite(int fd, char *address, int num_bytes) {
-
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a regular file
+    if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        // write num_bytes
+        
+        
+        // return number of bytes actually write
+    } else {
+        // Not a regular file
+        return -1;
+    }
 }
 
 int klseek(int fd, int offset) {
-
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a regular file
+    if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        // QUESTION? BOTH READ AND WRITE FILE POSITION????????
+        
+        
+        // returning the new position
+    } else {
+        // Not a regular file
+        return -1;
+    }
 }
 
 int kunlink(char *pathname) {
@@ -640,7 +682,11 @@ int kunlink(char *pathname) {
 }
 
 int kreaddir(int fd, char *address) {
-
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
 }
 
 int main() {
