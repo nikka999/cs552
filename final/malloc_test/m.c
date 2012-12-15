@@ -104,6 +104,7 @@ int check_for_last_write(int size, int ptr_count, unsigned char *file, int fb) {
 }
 
 int set_inode_reg_file(unsigned char *file, short inode, int size) {
+    
     //printf("Size=?%ld, Max_size?=%d\n", size, MAX_FILE_SIZE);
     if (size > MAX_FILE_SIZE) {
         return -1;
@@ -711,10 +712,15 @@ int read_file(short inode, int read_pos, int num_bytes, unsigned char *temp) {
     if ((read_pos + num_bytes) > (size - 1)) {
         // Not enough bytes for us to read, read what is possible.
         memcpy(temp, ist + read_pos, (size - read_pos));
+        // Increment fd position
+        fd_table[inode]->read_pos = size;
+
         return (size - read_pos);
     } else {
         // Enough byte for us to read.
         memcpy(temp, ist + read_pos, num_bytes);
+        // Increment fd position
+        fd_table[inode]->read_pos = read_pos + num_bytes;
         return num_bytes;
     }
     // Error if reach here.
@@ -748,6 +754,108 @@ int kread(int fd, char *address, int num_bytes) {
         // Not a regular file
         return -1;
     }
+}
+
+int write_to_fs(short inode, unsigned char *ist, int new_size) {
+    /**
+     * This function can be use for kwrite to actually write to fs
+     * WE SIMPLY JUST OVERWRITE ALLLLLLL DATA
+     */
+    // Traverse through all possible location
+    int i = 0; // Location blocks
+    int position = 0; // Position can also be used as a counter for size.
+    while(i < 10) {
+        // If there is allocated block?
+        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
+            printf("i = %d, is empty\n", i);
+            // No allocated block at i, we can return.
+            return position;
+        } else {
+            // Block already allocated. Loop though all blocks and build inode structure
+            if (i >= 0 && i <= 7) {
+                // 1~ 7 is direct block
+                // Since there is a block allocated, we can just copy the entire block.
+                memcpy((ist + position), GET_INODE_LOCATION_BLOCK(inode, i), 256);
+                position += 256;
+            } else if (i == 8) {
+                // 8 is single redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the redirection block, j is PTR_ENTRY
+                    if (GET_INODE_LOCATION_BLOCK_SIN(inode, j) == 0) {
+                        // If it equals 0, then there are NO Dir block allocated.
+                        return position;
+                    } else {
+                        // A dir block is allocated
+                        memcpy((ist + position), GET_INODE_LOCATION_BLOCK_SIN(inode, j), 256);
+                        position += 256;
+                    }
+                }
+            } else if (i == 9) {
+                // 9 is double redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the first redirection block, j is PTR_ENT1
+                    if (GET_INODE_LOCATION_BLOCK_DOB_FST(inode, j) == 0) {
+                        // There is no second redirection block.
+                        return position;
+                    } else {
+                        // There is a second redirection block.
+                        int k = 0;
+                        for (k; k < (256/4); k++) {
+                            // Loop through the second redirection block, k is PTR_ENT2
+                            if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
+                                // There is no Directory block
+                                return position;
+                            } else {
+                                // There is a Directory block
+                                memcpy((ist + position), GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k), 256);
+                                position += 256;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i++;
+    }
+    return position;
+}
+
+int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
+    // Build the inode structure first.
+    unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
+    int size = build_inode_structure(inode, ist);
+#ifdef debug
+    printf("size = %d\n", size);
+#endif
+    if (size == 0) {
+        return 0;
+    }
+    if ((write_pos + num_bytes) > MAX_FILE_SIZE) {
+        // Not enough bytes for us to write, write what is possible.
+        memcpy(ist + write_pos, temp, (MAX_FILE_SIZE - write_pos));
+        // Actually write back to filesystem
+        write_to_fs(inode, ist, MAX_FILE_SIZE);
+        // Set Inode new size
+        SET_INODE_SIZE(inode, MAX_FILE_SIZE);
+        // Increment fd position
+        fd_table[inode]->write_pos = MAX_FILE_SIZE;
+
+        return (MAX_FILE_SIZE - write_pos);
+    } else {
+        // Enough byte for us to read.
+        memcpy(ist + write_pos, temp, num_bytes);
+        // Actually write back to filesystem
+        write_to_fs(inode, ist, write_pos + num_bytes);
+        // Set Inode new size
+        SET_INODE_SIZE(inode, write_pos + num_bytes);
+        // Increment fd position
+        fd_table[inode]->write_pos = write_pos + num_bytes;
+        return num_bytes;
+    }
+    // Error if reach here.
+    return -1;
 }
 
 int kwrite(int fd, char *address, int num_bytes) {
