@@ -82,17 +82,19 @@ char reg[4] = "reg";
 // Assign BLOCK location to #Inode's #index. => Assign location in inode (regular file block (0~8))
 #define ASSIGN_LOCATION(INODE, INDEX, BLOCK); {rd->ib[INODE].blocks[INDEX] = &rd->pb[BLOCK];}
 #define GET_FROM_LOCATION(INODE, INDEX) (*rd->ib[INODE].blocks[INDEX]).reg.byte
+#define WRITE_TO_LOCATION(INODE, INDEX, FILE, BYTES); {memcpy(GET_FROM_LOCATION(INODE, INDEX), FILE, BYTES);}
 
 // To assign Single redirection block to #Inode's 8 location. Use ASSIGN_LOCATION(INODE, 8, BLOCK). Use WRITE_TO_FILE(block, bytes) to directly write to block.
 // Assign BLOCK to single redirection block
 #define ASSIGN_LOCATION_SINGLE_RED(INODE, PTR_ENTRY, BLOCK); {rd->ib[INODE].blocks[8]->ptr.blocks[PTR_ENTRY] = &rd->pb[BLOCK];}
 #define GET_FROM_LOCATION_SINGLE_RED(INODE, PTR_ENTRY) (*(*rd->ib[INODE].blocks[8]).ptr.blocks[PTR_ENTRY]).reg.byte
+#define WRITE_TO_LOCATION_SINGLE_RED(INODE, PTR_ENTRY, FILE, BYTES); {memcpy(GET_FROM_LOCATION_SINGLE_RED(INODE, PTR_ENTRY), FILE, BYTES);}
 
 // Double redirection block: Use ASSIGN_LOCATION(Inode, 9, block) for first redirection block. Use WRITE_TO_FILE(block, bytes) to directly write to final block.
 #define ASSIGN_LOCATION_DOUBLE_FST_RED(INODE, PTR_ENTRY, BLOCK); {rd->ib[INODE].blocks[9]->ptr.blocks[PTR_ENTRY] = &rd->pb[BLOCK];}
 #define ASSIGN_LOCATION_DOUBLE_SND_RED(INODE, PTR_ENTRY1, PTR_ENTRY2, BLOCK) {rd->ib[INODE].blocks[9]->ptr.blocks[PTR_ENTRY1]->ptr.blocks[PTR_ENTRY2] = &rd->pb[BLOCK];}
 #define GET_FROM_LOCATION_DOUBLE_RED(INODE, PTR_ENTRY1, PTR_ENTRY2) (*(*(*rd->ib[INODE].blocks[9]).ptr.blocks[PTR_ENTRY1]).ptr.blocks[PTR_ENTRY2]).reg.byte
-
+#define WRITE_TO_LOCATION_DOUBLE_RED(INODE, PTR_ENTRY1, PTR_ENTRY2, FILE, BYTES); {memcpy(GET_FROM_LOCATION_DOUBLE_RED(INODE, PTR_ENTRY1, PTR_ENTRY2), FILE, BYTES);}
 
 // Copy only 13, leave 14th for Null.
 #define SET_DIR_ENTRY_NAME(BLOCK, ENTRY, NAME); {memcpy(rd->pb[BLOCK].dir.ent[ENTRY].filename, NAME, 13);}
