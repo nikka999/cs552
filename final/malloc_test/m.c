@@ -35,7 +35,6 @@ void init_fs() {
 }
 
 
-// ================================IMPLEMENT ME========================================================
 //searches a parent directory for a file's inode, return -1 if not found
 int get_inode_index (int node, char *pathname) {
 	int i,k,j,z;
@@ -857,9 +856,20 @@ int kwrite(int fd, char *address, int num_bytes) {
     // Check if it is a regular file
     if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
         // write num_bytes From ADDRESS location
-        
+        // COPY FROM USERSPACE
+        unsigned char *temp = (unsigned char *)malloc(sizeof(num_bytes));
+        memcpy(temp, address, num_bytes);
+        int ret = write_file(fd, fd_table[fd]->write_pos, num_bytes, temp);
+        if (ret == -1) {
+            return -1;
+        }
+        if (ret == 0) {
+            // no byte write
+            return 0;
+        }
         
         // return number of bytes actually write
+        return ret;
     } else {
         // Not a regular file
         return -1;
@@ -982,11 +992,14 @@ int main() {
     
     char *pathname = "/home";
     kmkdir(pathname);
-    kmkdir(pathname);
+    printf("%d\n", get_inode_index(0, "home"));
 	char *another = "/home/yeah";
 	kmkdir(another);
+    printf("%d\n", get_inode_index(1, "yeah"));
     char *path2 = "/home/test";
     kcreat(path2);
+    printf("%d\n", get_inode_index(1, "test"));
+    
 
     
     //unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
