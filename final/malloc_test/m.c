@@ -587,6 +587,12 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                 // 2. Assign new block to inode location i
                 ASSIGN_LOCATION(inode, i, fb);
                 // 3. Write file in
+                if ((new_size - position) <= 256) {
+                    // This is the last block
+                    WRITE_TO_LOCATION(inode, i, (ist + position), (new_size - position));
+                    position += (new_size - position);
+                    return 1;
+                }
                 WRITE_TO_LOCATION(inode, i, (ist + position), 256);
                 position += 256;
             } else if (i == 8) {
@@ -600,6 +606,12 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                 // 4. Assign file block to PTR_ENT = 0
                 ASSIGN_LOCATION_SINGLE_RED(inode, 0, fb2);
                 // 5. Write File in
+                if ((new_size - position) <= 256) {
+                    // This is the last block
+                    WRITE_TO_LOCATION_SINGLE_RED(inode, 0, (ist + position), (new_size - position));
+                    position += (new_size - position);
+                    return 1;
+                }
                 WRITE_TO_LOCATION_SINGLE_RED(inode, 0, (ist + position), 256);
                 position += 256;
             } else if (i == 9) {
@@ -617,6 +629,12 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                 // 6. Assign file bock to PTR_ENT2=0
                 ASSIGN_LOCATION_DOUBLE_SND_RED(inode, 0, 0, fb3);
                 // 7. Write File in
+                if ((new_size - position) <= 256) {
+                    // This is the last block
+                    WRITE_TO_LOCATION_DOUBLE_RED(inode, 0, 0, (ist + position), (new_size - position));
+                    position += (new_size - position);
+                    return 1;
+                }
                 WRITE_TO_LOCATION_DOUBLE_RED(inode, 0, 0, (ist + position), 256);
                 position += 256;
             }
@@ -625,6 +643,12 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
             if (i >= 0 && i <= 7) {
                 // 1~ 7 is direct block
                 // Since there is a block allocated, we can just copy the entire block.
+                if ((new_size - position) <= 256) {
+                    // This is the last block
+                    WRITE_TO_LOCATION(inode, i, (ist + position), (new_size - position));
+                    position += (new_size - position);
+                    return 1;
+                }
                 memcpy(GET_INODE_LOCATION_BLOCK(inode, i), (ist + position), 256);
                 position += 256;
             } else if (i == 8) {
@@ -639,10 +663,22 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                         // 2. Assign new block as file block to PTR_ENT = j
                         ASSIGN_LOCATION_SINGLE_RED(inode, j, fb);
                         // 3. Write file in
+                        if ((new_size - position) <= 256) {
+                            // This is the last block
+                            WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), (new_size - position));
+                            position += (new_size - position);
+                            return 1;
+                        }
                         WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), 256);
                         position += 256;
                     } else {
                         // A file block is allocated
+                        if ((new_size - position) <= 256) {
+                            // This is the last block
+                            WRITE_TO_LOCATION(inode, j, (ist + position), (new_size - position));
+                            position += (new_size - position);
+                            return 1;
+                        }
                         WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), 256);
                         position += 256;
                     }
@@ -663,6 +699,12 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                         // 4. Assign file bock to PTR_ENT2=0
                         ASSIGN_LOCATION_DOUBLE_SND_RED(inode, j, 0, fb3);
                         // 5. Write File in
+                        if ((new_size - position) <= 256) {
+                            // This is the last block
+                            WRITE_TO_LOCATION(inode, i, (ist + position), (new_size - position));
+                            position += (new_size - position);
+                            return 1;
+                        }
                         WRITE_TO_LOCATION_DOUBLE_RED(inode, j, 0, (ist + position), 256);
                         position += 256;
                     } else {
@@ -677,10 +719,22 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                                 // 2. Assign file bock to PTR_ENT2=k
                                 ASSIGN_LOCATION_DOUBLE_SND_RED(inode, j, k, fb3);
                                 // 3. Write File in
+                                if ((new_size - position) <= 256) {
+                                    // This is the last block
+                                    WRITE_TO_LOCATION_DOUBLE_RED(inode, i, k, (ist + position), (new_size - position));
+                                    position += (new_size - position);
+                                    return 1;
+                                }
                                 WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), 256);
                                 position += 256;
                             } else {
                                 // There is a File block
+                                if ((new_size - position) <= 256) {
+                                    // This is the last block
+                                    WRITE_TO_LOCATION_DOUBLE_RED(inode, i, k, (ist + position), (new_size - position));
+                                    position += (new_size - position);
+                                    return 1;
+                                }
                                 WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), 256);
                                 position += 256;
                             }
@@ -691,7 +745,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
         }
         i++;
     }
-    return position;
+    return 1;
 }
 
 int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
