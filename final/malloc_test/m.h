@@ -24,6 +24,7 @@ char reg[4] = "reg";
 #define SET_INODE_TYPE_DIR(INDEX); {memcpy(rd->ib[INDEX].type, dir, 4);}
 #define SET_INODE_TYPE_REG(INDEX); {memcpy(rd->ib[INDEX].type, reg, 4);}
 #define SET_INODE_SIZE(INDEX, SIZE); {rd->ib[INDEX].size = SIZE;}
+#define GET_INODE_SIZE(INDEX) (rd->ib[INDEX].size)
 // For direct inode block BLOCK=0~7
 #define GET_INODE_LOCATION_BLOCK(INDEX, BLOCK) rd->ib[INDEX].blocks[BLOCK]
 #define SET_INODE_LOCATION_BLOCK(INDEX, BLOCK, PBLOCK); {rd->ib[INDEX].blocks[BLOCK] = &rd->pb[PBLOCK];} 
@@ -32,6 +33,7 @@ char reg[4] = "reg";
 #define SET_INODE_FROM_INODE_LOCATION_INODE(INODE, INDEX, ENT, INODE_NUM); {((*rd->ib[INODE].blocks[INDEX]).dir.ent[ENT].inode_number) = INODE_NUM;}
 #define SET_INODE_FROM_INODE_LOCATION_FILENAME(INODE, INDEX, ENT, FILENAME); {memcpy(((*rd->ib[INODE].blocks[INDEX]).dir.ent[ENT].filename), FILENAME, 13);}
 #define PRINT_INODE_FROM_INODE_LOCATION(INODE, INDEX, ENT); {printf("Filename = %s, Inode = %d\n", GET_INODE_FROM_INODE_LOCATION_FILENAME(INODE, INDEX, ENT), GET_INODE_FROM_INODE_LOCATION_INODE(INODE, INDEX, ENT));}
+
 // For single redirection block BLOCK = 8
 #define GET_INODE_LOCATION_BLOCK_SIN(INODE, PTR_ENT) ((*rd->ib[INODE].blocks[8]).ptr.blocks[PTR_ENT])
 #define GET_INODE_FROM_INODE_LOCATION_SIN_INODE(INODE, PTR_ENT, ENT) ((*(*rd->ib[INODE].blocks[8]).ptr.blocks[PTR_ENT]).dir.ent[ENT].inode_number)
