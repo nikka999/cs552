@@ -35,7 +35,6 @@ void init_fs() {
 }
 
 
-// ================================IMPLEMENT ME========================================================
 //searches a parent directory for a file's inode, return -1 if not found
 int get_inode_index (int node, char *pathname) {
 	int i,k,j,z;
