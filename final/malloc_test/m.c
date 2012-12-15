@@ -7,7 +7,6 @@
 /** MAXIMUM */
 #define MAX_FILE_COUNT INODE_NUMBER
 #define MAX_FILE_SIZE ((64*256)+(64*64*256)+256*8)
-
 // For fd. Since the maximum file number is 1024. We assign it to be 1024.
 // Put fd number to the fd_table.
 struct fd *fd_table[1024];
@@ -48,14 +47,20 @@ int get_inode_index (int node, char *pathname) {
 	if (!strcmp(inode.type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
-		bd = inode.blocks[i]->dir;
+		if (inode.blocks[i] != 0)
+			bd = inode.blocks[i]->dir;
+		else
+			continue;
 		for (k = 0; k < 16; k++) {
 			if(!strcmp(bd.ent[k].filename, pathname))
 				return bd.ent[k].inode_number;
 		}
 	}
 	for (i = 8; i < 10; i++) {
-		bp = inode.blocks[i]->ptr;
+		if (inode.blocks[i] != 0)
+			bp = inode.blocks[i]->ptr;
+		else
+			continue;
 		for (k = 0; k < BLOCK_SIZE/4; k++) {
 			blk = bp.blocks[k];
 			bd = blk->dir;
@@ -94,7 +99,6 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	int current_index;
 	// unsigned int dir = 0;
 	memset(name, 0, 14);
-
     //validate that user inputed root
 	if (pathname[0] != '/')
 		return -1;
@@ -379,14 +383,10 @@ int kcreat(char *pathname) {
     // Check pathname and get last entry.
     char *last = (char *)malloc(14);
     short super_inode;
-#ifdef fin
     if (check_pathname(pathname, last, &super_inode) == -1) {
         // Pathname failed. 
         return -1;
     }
-#endif
-    last = "test";
-    super_inode = 1;
     printf("%s, super=%d\n", last, super_inode);
     
     // Create file
@@ -408,21 +408,22 @@ int kmkdir(char *pathname) {
     if (fi == -1) {
         return -1;
     }
-#ifdef debug
+// #ifdef debug
     printf("%s\n", pathname);
-#endif
+// #endif
     
     // Check_pathname and get last entry
     char *last = (char *)malloc(14);
     short super_inode;
-#ifdef fin
-    if (check_pathname(pathname, last, &super_inode) == -1) {
-        // Pathname failed. 
+// #ifdef fin
+    if (check_pathname(pathname, last, &super_inode) < 0) {
+        // Pathname failed.
+		printf("pathname: %s, already exists\n", pathname);
         return -1;
     }
-#endif
-    memcpy(last, "home", 5);
-    super_inode = 0;
+// #endif
+    // memcpy(last, "home", 5);
+    // super_inode = 0;
     printf("%s, super=%d\n", last, super_inode);
     
 #ifdef debug
@@ -981,6 +982,8 @@ int main() {
     char *pathname = "/home";
     kmkdir(pathname);
     kmkdir(pathname);
+	char *another = "/home/yeah";
+	kmkdir(another);
     char *path2 = "/home/test";
     kcreat(path2);
 
