@@ -407,22 +407,18 @@ int kmkdir(char *pathname) {
     if (fi == -1) {
         return -1;
     }
-// #ifdef debug
     printf("%s\n", pathname);
-// #endif
+
     
     // Check_pathname and get last entry
     char *last = (char *)malloc(14);
     short super_inode;
-// #ifdef fin
+
     if (check_pathname(pathname, last, &super_inode) < 0) {
         // Pathname failed.
 		printf("pathname: %s, already exists\n", pathname);
         return -1;
     }
-// #endif
-    // memcpy(last, "home", 5);
-    // super_inode = 0;
     printf("%s, super=%d\n", last, super_inode);
     
 #ifdef debug
@@ -895,7 +891,18 @@ int klseek(int fd, int offset) {
 }
 
 int kunlink(char *pathname) {
-
+    if (pathname[0] == '/' && pathname[1] == '\0') {
+        // trying to unlink root
+        return -1;
+    }
+    char *last = (char *)malloc(14);
+    short super_inode;
+    int retp = check_pathname(pathname, last, &super_inode);
+    printf("retp = %d\n", retp);
+    if (retp == 0 || retp == -1) {
+        // does not exist file
+        return -1;
+    }
 }
 
 int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
@@ -990,6 +997,8 @@ int main() {
     SET_INODE_LOCATION_BLOCK(0, 0, fb);
     //
     
+    //check_pathname(char *pathname, char* last, short* super_inode)
+    
     char *pathname = "/home";
     kmkdir(pathname);
     printf("%d\n", get_inode_index(0, "home"));
@@ -999,7 +1008,6 @@ int main() {
     char *path2 = "/home/test";
     kcreat(path2);
     printf("%d\n", get_inode_index(1, "test"));
-    
 
     
     //unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
