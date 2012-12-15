@@ -23,7 +23,7 @@ char reg[4] = "reg";
 #define SET_INODE_TYPE_DIR(INDEX); {memcpy(rd->ib[INDEX].type, dir, 4);}
 #define SET_INODE_TYPE_REG(INDEX); {memcpy(rd->ib[INDEX].type, reg, 4);}
 #define SET_INODE_SIZE(INDEX, SIZE); {rd->ib[INDEX].size = SIZE;}
-
+#define GET_INODE_BY_INDEX(INDEX) rd->ib[INDEX]
 
 /** General methods */
 // Create 1 on bit y (all others 0)
