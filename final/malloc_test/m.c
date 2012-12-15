@@ -128,12 +128,12 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	//copy the specified name in final dir to name
 	strncpy(name, pathname, 14);
 	current_index = get_inode_index(node_index, name);
-	//if returns something other than -1, it means that this pathname already exits
-	if (current_index > 0)
-		return -2;
 	//set last as the final file name
 	strncpy(last, name, 14);
 	*super_inode = node_index;
+	//if returns something other than -1, it means that this pathname already exits
+	if (current_index > 0)
+		return -2;
 	return 0;
 }
 
