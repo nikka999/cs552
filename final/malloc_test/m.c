@@ -552,7 +552,8 @@ int kclose(int fd) {
         // Not an open file
         return -1;
     } else {
-        fd_table[fd] = NULL;
+		free(fd_table[fd]);
+		fd_table[fd] = NULL;
     }
     return 0;
 }
