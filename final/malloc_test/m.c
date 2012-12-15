@@ -10,20 +10,21 @@
 
 // For fd. Since the maximum file number is 1024. We assign it to be 1024.
 // Put fd number to the fd_table.
-short fd_table[1024];
+struct fd *fd_table[1024];
 struct Ramdisk *rd;
 
 int find_free_block() {
-    // Find a new free block, using first-fit.
+    // Find a new free block, using first-fit. NOTE: before returning, we SET THE BITMAP = 1 !!!!!!
     if (SHOW_FREEBLOCK == 0) {
         printf("Find Free Block: FREEBLOCK=0, returning -1 \n");
         return -1;
     } else {
         int j = 0;
         for (j; j < PARTITION_NUMBER; j++) {
-            
             if (SEE_BITMAP_FREE(j) == 1) {
                 //printf("%d\n", j);
+                // Set bitmap = 1
+                SET_BITMAP_ALLOCATE_BLOCK(j);
                 return j;
             }
         }
@@ -309,7 +310,7 @@ int find_free_inode() {
     printf("No free block found, ERROR\n");
     return -1;
 }
-
+#define debug
 
 int insert_inode(short super_inode, short new_inode, char *filename) {
     // Loop through super_inode LOC ptr.
@@ -326,7 +327,10 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 // 1~ 7 is direct block
                 SET_DIR_ENTRY_NAME(fb, 0, filename);
                 SET_DIR_ENTRY_INODE(fb, 0, new_inode);
+#ifdef debug
+                printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Dir_entry index = %d\n", super_inode, i, 0);
                 PRINT_DIR_ENTRY(fb, 0);
+#endif
                 return 1;
             } else if (i == 8) {
                 // 8 is single redirection block
@@ -337,6 +341,9 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 ASSIGN_LOCATION_SINGLE_RED(super_inode, 0, fb2);
                 SET_DIR_ENTRY_NAME(fb2, 0, filename);
                 SET_DIR_ENTRY_INODE(fb2, 0, new_inode);
+#ifdef debug
+                printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry = %d, Dir_entry index = %d\n", super_inode, i, 0, 0);
+#endif
                 return 1;
             } else if (i == 9) {
                 // 9 is double redirection block
@@ -350,6 +357,9 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 ASSIGN_LOCATION_DOUBLE_SND_RED(super_inode, 0, 0, fb3);
                 SET_DIR_ENTRY_NAME(fb3, 0, filename);
                 SET_DIR_ENTRY_INODE(fb3, 0, new_inode);
+#ifdef debug
+                printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry1 = %d, PTR_ENT2=%d, Dir_entry index = %d\n", super_inode, i, 0, 0, 0);
+#endif
                 return 1;
             }
         } else {
@@ -361,7 +371,9 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 for (j; j < 16; j++) {
                     if (GET_INODE_FROM_INODE_LOCATION_INODE(super_inode, i, j) == 0) {
                         // We have a free location
-                        printf("Free location. Inode = %d, Location index = %d, Dir_entry index = %d\n", super_inode, i, j);
+#ifdef debug
+                        printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Dir_entry index = %d\n", super_inode, i, j);
+#endif
                         // Insert inode into this location
                         SET_INODE_FROM_INODE_LOCATION_INODE(super_inode, i, j, new_inode);
                         SET_INODE_FROM_INODE_LOCATION_FILENAME(super_inode, i, j, filename);
@@ -388,7 +400,10 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                         ASSIGN_LOCATION_SINGLE_RED(super_inode, j, fb);
                         SET_DIR_ENTRY_NAME(fb, 0, filename);
                         SET_DIR_ENTRY_INODE(fb, 0, new_inode);
+#ifdef debug
+                        printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry = %d, Dir_entry index = %d\n", super_inode, i, j, 0);
                         PRINT_INODE_FROM_INODE_LOCATION_SIN(super_inode, j, 0);
+#endif
                         return 1;
                     } else {
                         // A dir block is present, loop through to find free location
@@ -396,12 +411,14 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                         for (k; k < 16; k++) {
                             // Loop through the Dir Block
                             if (GET_INODE_FROM_INODE_LOCATION_SIN_INODE(super_inode, j, k) == 0) {
-                            printf("Free location. Inode = %d, Location index = %d, Ptr_entry = %d, Dir_entry index = %d\n", super_inode, i, j, k);
-                            }
+#ifdef debug
+                            printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry = %d, Dir_entry index = %d\n", super_inode, i, j, k);
+#endif
                             SET_INODE_FROM_INODE_LOCATION_SIN_INODE(super_inode, j, k, new_inode);
                             SET_INODE_FROM_INODE_LOCATION_SIN_FILENAME(super_inode, j, k, filename);
                             PRINT_INODE_FROM_INODE_LOCATION_SIN(super_inode, j, k);
                             return 1;
+                            }
                         }
                     }
 #ifdef debug
@@ -427,7 +444,10 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                         // 3. Insert new inode
                         SET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, 0, 0, new_inode);
                         SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(super_inode, j, 0, 0, filename);
+#ifdef debug
+                        printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry1 = %d, PTR_ENT2=%d, Dir_entry index = %d\n", super_inode, i, j, 0, 0);
                         PRINT_INODE_FROM_INODE_LOCATION_DOB(super_inode, j, 0, 0);
+#endif
                         return 1;
                     } else {
                         // There is a second redirection block.
@@ -442,7 +462,10 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                                 // 2. Insert new inode
                                 SET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, k, 0, new_inode);
                                 SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(super_inode, j, k, 0, filename);
+#ifdef debug
+                                printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry1 = %d, PTR_ENT2=%d, Dir_entry index = %d\n", super_inode, i, j, k, 0);
                                 PRINT_INODE_FROM_INODE_LOCATION_DOB(super_inode, j, k, 0);
+#endif
                                 return 1;
                             } else {
                                 // There is a Directory block
@@ -451,10 +474,12 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                                     // l is ENT
                                     // Loop through Directory block to find a free entry
                                     if (GET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, k, l) == 0) {
-                                        printf("Free location. Inode = %d, Location index = %d, Ptr_entry1 = %d, PTR_ENT2=%d, Dir_entry index = %d\n", super_inode, i, j, k, l);
                                         SET_INODE_FROM_INODE_LOCATION_DOB_INODE(super_inode, j, k, l, new_inode);
                                         SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(super_inode, j, k, l, filename);
+#ifdef debug
+                                        printf("**New inode inserted**\n ----To free location. super_inode = %d, Location index = %d, Ptr_entry1 = %d, PTR_ENT2=%d, Dir_entry index = %d\n", super_inode, i, j, k, l);
                                         PRINT_INODE_FROM_INODE_LOCATION_DOB(super_inode, j, k, l);
+#endif
                                         return 1;
                                     }
                                 }
@@ -479,37 +504,38 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
     return -1;
 }
 
+#undef debug
 
-
-int kcreat() {
+int kcreat(char *pathname) {
     // kernel creat. Create a file
     int fi = find_free_inode();
     printf("Free inode = %d\n", fi);
     if (fi == -1) {
         return -1;
     }
-    // Check pathname
-    
-    // Check if filename is already taken w/in the directory.
-    
-    
-    return 1;
-}
-
-int check_for_filename_exist(int inode, char *filename) {
-    int i=0;
-    int j=0;
-    for (i; i < 10; i++) {
-        if (i == 8) {
-            // Single redirection block
-        } else if (i == 9) {
-            // double redirection block
-        } else {
-            // Direct block pointer. 
-            for (j; j < 16; j++) {
-            }
-        }
+    // Check pathname and get last entry.
+    char *last = (char *)malloc(14);
+    short super_inode;
+#ifdef fin
+    if (check_pathname(pathname, last, &super_inode) == -1) {
+        // Pathname failed. 
+        return -1;
     }
+#endif
+    last = "test";
+    super_inode = 1;
+    printf("%s, super=%d\n", last, super_inode);
+    
+    // Create file
+    // 1. Find a new free inode. DONE ABOVE
+    // 2. Assign type as reg. size=0. DO NOT ALLOCATE NEW BLOCK.
+    SET_INODE_TYPE_REG(fi);
+    SET_INODE_SIZE(fi, 0);
+    // 3. Assign new inode to super inode.
+    if (insert_inode(super_inode, fi, last) != 1) {
+        return -1;
+    }
+    return 0;
 }
 
 int kmkdir(char *pathname) {
@@ -519,9 +545,11 @@ int kmkdir(char *pathname) {
     if (fi == -1) {
         return -1;
     }
+#ifdef debug
     printf("%s\n", pathname);
+#endif
     
-    // Check_pathname and get last entry.
+    // Check_pathname and get last entry
     char *last = (char *)malloc(14);
     short super_inode;
 #ifdef fin
@@ -540,13 +568,84 @@ int kmkdir(char *pathname) {
     SET_INODE_TYPE_DIR(fi);
     SET_INODE_SIZE(fi, 0);
     // 3. Assign new inode to super inode.
+    if (insert_inode(super_inode, fi, last) != 1) {
+        return -1;
+    }
+    return 0;
+}
 
-    insert_inode(super_inode, fi, last);
-   
+
+int kopen(char *pathname) {
+#ifdef debug
+    printf("%s\n", pathname);
+#endif
+    // Check_pathname and get last entry
+    char *last = (char *)malloc(14);
+    short super_inode;
+#ifdef fin
+    if (check_pathname(pathname, last, &super_inode) == -1) {
+        // Pathname failed.
+        return -1;
+    }
+#endif
+    // 1. Find inode number for file within super_inode
+    int temp_inode = 3;
+
+    int inode = temp_inode;
+    // 2. Check if fd_table is active. 
+    if (fd_table[inode] == NULL) {
+        struct fd* newfd;
+        newfd = (struct fd *)malloc(sizeof(struct fd));
+        newfd->inode = &rd->ib[inode];
+        fd_table[inode] = newfd;
+    } else {
+        // Other file is accessing it.
+        return -1;
+    }
+#ifdef debug
+    printf("%d, %d, %s\n", fd_table[inode]->read_pos, fd_table[inode]->write_pos, fd_table[inode]->inode->type);
+#endif
+    
+    // We return the inode index of the file, which also is the fd_table index.
+    // Since there is no special requirement on the traditional linux incrementing fd (i.e. first fd is 1, second is 2...etc), we just use what is easiest. 
+    return inode;
+}
+
+int kclose(int fd) {
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an open file
+        return -1;
+    } else {
+        fd_table[fd] = NULL;
+    }
+    
+    return 0;
+}
+
+int kread(int fd, char *address, int num_bytes) {
+    
+}
+
+int kwrite(int fd, char *address, int num_bytes) {
+
+}
+
+int klseek(int fd, int offset) {
+
+}
+
+int kunlink(char *pathname) {
+
+}
+
+int kreaddir(int fd, char *address) {
+
 }
 
 int main() {
     init_fs();
+    
     
     /**
     // Test write from inode
@@ -561,6 +660,7 @@ int main() {
     printf("GET_FILE=\n%s\n", file_read);
     */
     
+
     // for testing
     int fb = find_free_block();
     SET_INODE_LOCATION_BLOCK(0, 0, fb);
@@ -568,8 +668,14 @@ int main() {
     
     char *pathname = "/home";
     kmkdir(pathname);
+    kmkdir(pathname);
+    char *path2 = "/home/test";
+    kcreat(path2);
+
+    int i = kopen(path2);
+    kclose(i);
     
-#ifdef debug
+#ifdef debug2
     PRINT_FREEINODE_COUNT;
     PRINT_FREEBLOCK_COUNT;
 

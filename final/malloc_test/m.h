@@ -161,3 +161,10 @@ struct Ramdisk{
     struct Bitmap_block bb;
     union Block pb[PARTITION_NUMBER];
 };
+
+struct fd {
+    // for read and write position
+    int read_pos;
+    int write_pos;
+    struct Inode *inode;
+};
