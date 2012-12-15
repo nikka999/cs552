@@ -900,8 +900,31 @@ int kunlink(char *pathname) {
     int retp = check_pathname(pathname, last, &super_inode);
     printf("retp = %d\n", retp);
     if (retp == 0 || retp == -1) {
-        // does not exist file
+        // does not exist file or error
         return -1;
+    }
+    if (retp > 0) {
+        // File exist, we can strart to remove
+        // Get inode number
+        int inode = retp;
+        if (memcmp(dir, GET_INODE_TYPE(fd), 3) == 0) {
+            // Check if it is a DIR file
+            if (GET_INODE_SIZE(inode) != 0) {
+                // removing non-empty directory.
+                return -1; 
+            } else {
+                // file size = 0
+                // 1. Remove dir
+                // 2. Go to super_inode and remove inode entry
+            }
+        }
+        if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+            // Check if it is a reg file
+            // 1. Get file size
+            // 2. remove file
+            // 3. Go to super_inode and remove inode entry
+            // 4. Traverse filesystem and minus file_size on all super inodes.
+        }
     }
 }
 
