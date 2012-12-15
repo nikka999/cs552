@@ -37,39 +37,101 @@ void init_fs() {
 
 
 // ================================IMPLEMENT ME========================================================
+//searches a parent directory for a file's inode, return -1 if not found
+int get_inode_index (int node, char *pathname) {
+	int i,k,j,z;
+	struct Inode inode;
+	struct Block_dir bd;
+	struct Block_ptr bp;
+	union Block *blk, *dblk;
+	inode = GET_INODE_BY_INDEX(node);
+	if (!strcmp(inode.type, "reg"))
+		return -1;
+	for (i = 0; i < 8; i++) {
+		bd = inode.blocks[i]->dir;
+		for (k = 0; k < 16; k++) {
+			if(!strcmp(bd.ent[k].filename, pathname))
+				return bd.ent[k].inode_number;
+		}
+	}
+	for (i = 8; i < 10; i++) {
+		bp = inode.blocks[i]->ptr;
+		for (k = 0; k < BLOCK_SIZE/4; k++) {
+			blk = bp.blocks[k];
+			bd = blk->dir;
+			if (i == 8) {
+				for (j = 0; j < 16; j++) {
+					if(!strcmp(bd.ent[j].filename, pathname)) {
+						return bd.ent[j].inode_number;
+					}
+				} 				
+			}
+			else {
+				for (j = 0; j < BLOCK_SIZE/4; j++) {
+					dblk = blk->ptr.blocks[j];
+					bd = dblk->dir;					
+					for (z = 0; z < 16; z++) {
+						if(!strcmp(bd.ent[z].filename, pathname)) {
+							return bd.ent[z].inode_number;
+						}
+					}
+				}
+			}
+		}		
+	}
+	//fieldname not found
+	return -1;
+}
+
+
+
 int check_pathname (char *pathname, char* last, short* super_inode) {
-    // Traverse pathname recursively find inode for subdir.
-    int ptr = 0;
-    // filename cannot exceed 13 char
-    int char_count = -1;
-    int cur = -1;
-    int dir_inode = 0; // Set for root
-    // Last occurance of '/'
-    int last_dir = 0;
-    while (cur != '\0') {
-        if (char_count == 14) {
-            // filename exceed 13 chars
-            return -1;
-        }
-        cur = *(pathname + ptr);
-        if (cur == '/') {
-            last_dir = ptr;
-            char_count = -1;
-            
-            printf("/ location=%d\n", ptr);
-        }
-        if (*(pathname + ptr + 1) == '\0') {
-            // If next cell is NULL term, then copy the name over
-            // current location is ptr;
-            if (last_dir == 0) {
-                // 1. Check for filename exist or not
-                // 2. Get free ptr_entry
-                
-            }
-        }
-        ptr++;
-        char_count++;
-    }
+	char name[14];
+	char *slash;
+	unsigned int size;
+	// struct Inode inode;
+	int node_index = 0;
+	int current_index;
+	// unsigned int dir = 0;
+	memset(name, 0, 14);
+
+    //validate that user inputed root
+	if (pathname[0] != '/')
+		return -1;
+	size = strnlen(pathname, 100);
+	// if size is 1, then the user only entered '/'
+	if (size < 2)
+		return -1;
+	pathname++;
+	while ((slash = strchr(pathname, '/')) != NULL) {
+		size = slash-pathname;
+		// check if someone typed two slash in row (i.e //)
+		if (size < 1)
+			return -1;
+		// check if fieldname is greater than 14 chars
+		if (size > 14)
+			return -1;
+		strncpy(name, pathname, size);
+		name[size] = '\0';
+		pathname = slash + 1;
+		node_index = get_inode_index(node_index, name);
+		if (node_index < 0)
+			return -1;
+	}
+	//means the last character is a / (could use this to create new dir) or just error out
+	if (*pathname == '\0')
+		return -1;
+		// dir = 1;
+	//copy the specified name in final dir to name
+	strncpy(name, pathname, 14);
+	current_index = get_inode_index(node_index, name);
+	//if returns something other than -1, it means that this pathname already exits
+	if (current_index > 0)
+		return -2;
+	//set last as the final file name
+	strncpy(last, name, 14);
+	*super_inode = node_index;
+	return 0;
 }
 
 int find_free_block() {
