@@ -356,14 +356,19 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                 // 1~ 7 is direct block
                 int j = 0;
                 for (j; j < 16; j++) {
-                    if (GET_INODE_FROM_INODE_LOCATION(super_inode, i, j) == 0) {
+                    if (GET_INODE_FROM_INODE_LOCATION_INODE(super_inode, i, j) == 0) {
                         // We have a free location
-                        printf("Free location. Inode = %d, Location index = %d, Dir_entry index = %d\n", );
-                        
+                        printf("Free location. Inode = %d, Location index = %d, Dir_entry index = %d\n", super_inode, i, j);
+                        // Insert inode into this location
+                        SET_INODE_FROM_INODE_LOCATION_INODE(super_inode, i, j, new_inode);
+                        SET_INODE_FROM_INODE_LOCATION_FILENAME(super_inode, i, j, filename);
+                        PRINT_INODE_FROM_INODE_LOCATION(super_inode, i, j);
+                        return 1;
                     }
-                
                 }
+                // No free in 'i' direct block
             } else if (i == 8) {
+                
                 // 8 is single redirection block
             } else if (i == 9) {
                 // 9 is double redirection block
