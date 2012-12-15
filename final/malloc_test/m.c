@@ -1076,7 +1076,7 @@ int main() {
     
     int i = kopen(path2);
     char *add= (char *)malloc(16);
-    kreaddir(0, add);
+    kreaddir(i, add);
     
     printf("read dir returned: \n");
     int ij = 0;
