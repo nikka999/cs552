@@ -442,7 +442,7 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
     while(i < 10) {
         // If there is allocated block?
         if (GET_INODE_LOCATION_BLOCK(super_inode, i) == 0) {
-            printf("i = %d, is empty\n", i);
+            //printf("i = %d, is empty\n", i);
             // Allocate partition blocks for super_inode
             int fb = find_free_block();
             // Assign free block to super_inode location i.
@@ -710,7 +710,7 @@ int build_inode_structure(short inode, unsigned char *ist) {
     while(i < 10) {
         // If there is allocated block?
         if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
-            printf("i = %d, is empty\n", i);
+            //printf("i = %d, is empty\n", i);
             // No allocated block at i, we can return.
             return position;
         } else {
@@ -1300,7 +1300,7 @@ int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     // Nothing read, return EOF
     return 0;
 }
-
+#define debug
 int kreaddir(int fd, char *address) {
     // Again, fd=inode index
     if (fd_table[fd] == NULL) {
@@ -1322,6 +1322,11 @@ int kreaddir(int fd, char *address) {
 #ifdef debug
         printf("\nret = %d\n", ret);
         printf("%d\n", temp_add->inode_number);
+        int zz = 0;
+        for (zz; zz < 16; zz++) {
+            printf("%d ", *((unsigned char *)temp_add + zz));
+        }
+        printf("\n");
 #endif
         memcpy(address, temp_add, 16);
         
