@@ -22,8 +22,8 @@
 // #define's to control what tests are performed,
 // comment out a test if you do not wish to perform it
 
-#define TEST1
-//#define TEST2
+//#define TEST1
+#define TEST2
 //#define TEST3
 //#define TEST4
 //#define TEST5
@@ -149,7 +149,7 @@ int main () {
   
   /* Try writing to all single-indirect data blocks */
   retval = kwrite (fd, data2, sizeof(data2));
-    printf("kwrite 1 actually writes = %d, suppose to write = %d\n", retval, sizeof(data2));
+    
   if (retval < 0) {
     fprintf (stderr, "kwrite: File write STAGE2 error! status: %d\n", 
 	     retval);
@@ -162,7 +162,7 @@ int main () {
 
   /* Try writing to all double-indirect data blocks */
   retval = kwrite (fd, data3, sizeof(data3));
-  
+  printf("kwrite 2 actually writes = %d, suppose to write = %ld\n", retval, sizeof(data2));
   if (retval < 0) {
     fprintf (stderr, "kwrite: File write STAGE3 error! status: %d\n", 
 	     retval);
