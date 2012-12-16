@@ -631,6 +631,8 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
 #undef debug
 #undef nofree
 int kcreat(char *pathname) {
+    PRINT_FREEINODE_COUNT;
+    PRINT_FREEBLOCK_COUNT;
     // kernel creat. Create a file
     int fi = find_free_inode();
     printf("Free inode = %d\n", fi);
@@ -1164,6 +1166,7 @@ int unlink_file(int inode) {
 				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
 				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
 				INCR_FREEBLOCK;
+                
             } else if (i == 8) {
 				for (k = 0; k < BLOCK_SIZE/4; k++) {
 					if(GET_INODE_LOCATION_BLOCK_SIN(inode, k) == 0)
@@ -1171,11 +1174,11 @@ int unlink_file(int inode) {
 					memset(GET_INODE_LOCATION_BLOCK_SIN(inode, k)->reg.byte, 0, 256);
 					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_SIN(inode, k)));
 					INCR_FREEBLOCK;
+                    
 				}
 				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
 				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
 				INCR_FREEBLOCK;
-				
 				// Remove All File Blocks
                 // Then Remove Single redirection block
             } else if (i == 9) {
@@ -1188,10 +1191,12 @@ int unlink_file(int inode) {
 						memset(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)->reg.byte, 0, 256);
 						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)));
 						INCR_FREEBLOCK;
-					}
+                    }
+                    
 					memset(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k)->reg.byte, 0, 256);
 					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k)));
 					INCR_FREEBLOCK;
+                    
 				}
 				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
 				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
@@ -1254,6 +1259,8 @@ int kunlink(char *pathname) {
 			recursive_pathname_size_decr(pathname, reg_size);
 			INCR_FREEINODE;
             // 4. Traverse filesystem and minus file_size on all super inodes.
+            PRINT_FREEINODE_COUNT;
+            PRINT_FREEBLOCK_COUNT;
             return 0;
         }
     }
