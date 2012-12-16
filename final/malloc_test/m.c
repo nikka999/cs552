@@ -813,9 +813,6 @@ int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
 #ifdef debug
     printf("size = %d\n", size);
 #endif
-    if (size == 0) {
-        return 0;
-    }
     if ((write_pos + num_bytes) > MAX_FILE_SIZE) {
         // Not enough bytes for us to write, write what is possible.
         memcpy(ist + write_pos, temp, (MAX_FILE_SIZE - write_pos));
