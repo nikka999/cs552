@@ -33,7 +33,15 @@ int init_fs() {
     // EOF init
 }
 
-
+int is_block_empty(union Block *blk) {
+	struct Block_reg re = blk->reg;
+	int i;
+	for (i = 0; i < BLOCK_SIZE; i++) {
+		if (re.byte[i] != 0)
+			return 0;
+	}
+	return 1;
+}
 //searches a parent directory for a file's inode, return -1 if not found
 int get_inode_index (int node, char *pathname) {
 	int i,k,j,z;
@@ -268,6 +276,11 @@ int delete_dir_entry(short node, char *pathname) {
 		for (k = 0; k < 16; k++) {
 			if(!strcmp(bd->ent[k].filename, pathname)) {
 				memset(&(bd->ent[k]), 0, sizeof(struct Dir_entry));
+				if(is_block_empty(inode->blocks[i])) {
+					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(inode->blocks[i]));
+					INCR_FREEBLOCK;
+					inode->blocks[i] = NULL;					
+				}
 				return 0;
 			}
 				
@@ -279,26 +292,59 @@ int delete_dir_entry(short node, char *pathname) {
 		else
 			continue;
 		for (k = 0; k < BLOCK_SIZE/4; k++) {
-			blk = bp->blocks[k];
-			bd = &(blk->dir);
+			if ((blk = bp->blocks[k]) != 0)
+				bd = &(blk->dir);
+			else
+				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
 					if(!strcmp(bd->ent[j].filename, pathname)) {
 						memset(&(bd->ent[j]), 0, sizeof(struct Dir_entry));
-						return 0;
-					}
-				} 				
+						if(is_block_empty(blk)) {
+							SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(blk));
+							INCR_FREEBLOCK;
+							blk = NULL;					
+						}
+						// return 0;
+						break;
+					}	
+				}
+				if(is_block_empty(inode->blocks[i])) {
+					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(inode->blocks[i]));
+					INCR_FREEBLOCK;
+					inode->blocks[i] = NULL;					
+				}
+				return 0; 				
 			}
 			else {
 				for (j = 0; j < BLOCK_SIZE/4; j++) {
-					dblk = blk->ptr.blocks[j];
-					bd = &(dblk->dir);					
+					if((dblk = blk->ptr.blocks[j]) != 0)
+						bd = &(dblk->dir);					
+					else
+						continue;
 					for (z = 0; z < 16; z++) {
 						if(!strcmp(bd->ent[z].filename, pathname)) {
 							memset(&(bd->ent[z]), 0, sizeof(struct Dir_entry));
-							return 0;
+							if(is_block_empty(dblk)) {
+								SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(dblk));
+								INCR_FREEBLOCK;
+								dblk = NULL;					
+							}
+							// return 0;
+							break;
 						}
 					}
+					if(is_block_empty(blk)) {
+						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(blk));
+						INCR_FREEBLOCK;
+						blk = NULL;					
+					}
+					if(is_block_empty(inode->blocks[i])) {
+						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(inode->blocks[i]));
+						INCR_FREEBLOCK;
+						inode->blocks[i] = NULL;					
+					}
+					return 0;
 				}
 			}
 		}		
