@@ -64,7 +64,9 @@ int get_inode_index (int node, char *pathname) {
 			bd = blk->dir;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
+                    printf("checkpath name=%s, %d\n", pathname, j);
 					if(!strcmp(bd.ent[j].filename, pathname)) {
+                        printf("checkpath name=%s, %d\n", pathname, j);
 						return bd.ent[j].inode_number;
 					}
 				} 				
@@ -89,7 +91,7 @@ int get_inode_index (int node, char *pathname) {
 
 //checks if pathname exists, -1 if error, 0 if does not exists, >0 if does exists
 int check_pathname (char *pathname, char* last, short* super_inode) {
-	char name[14];
+    char name[14];
 	char *slash;
 	unsigned int size;
 	// struct Inode inode;
@@ -379,7 +381,7 @@ int find_free_inode() {
     return -1;
 }
 #define debug
-
+//#define nofree
 int insert_inode(short super_inode, short new_inode, char *filename) {
     // Loop through super_inode LOC ptr.
     int i = 0; // Location blocks
@@ -448,11 +450,11 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                         PRINT_INODE_FROM_INODE_LOCATION(super_inode, i, j);
                         return 1;
                     }
-#ifdef debug
+#ifdef nofree
                     printf("No free in #%d direct block\n", i);
 #endif
                 }
-#ifdef debug
+#ifdef nofree
                 printf("No free in ALL direct block\n");
 #endif
             } else if (i == 8) {
@@ -489,11 +491,11 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                             }
                         }
                     }
-#ifdef debug
+#ifdef nofree
                     printf("No free in PTR_ENT = %d, single redirection block\n", j);
 #endif
                 }
-#ifdef debug
+#ifdef nofree
                 printf("No free in ALL single redirection block\n");
 #endif
             } else if (i == 9) {
@@ -552,16 +554,16 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                                     }
                                 }
                             }
-#ifdef debug
+#ifdef nofree
                             printf("No free in PTR_ENT1=%d, PTR_ENT2=%d double redirection block\n", j, k);
 #endif
                         }
                     }
-#ifdef debug
+#ifdef nofree
                     printf("No free in PTR_ENT1=%d double redirection block\n", j);
 #endif
                 }
-#ifdef debug
+#ifdef nofree
                 printf("No free in ALL double redirection block\n");
 #endif
             }
@@ -573,12 +575,12 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
 }
 
 #undef debug
-
+#undef nofree
 int kcreat(char *pathname) {
     // kernel creat. Create a file
     int fi = find_free_inode();
     printf("Free inode = %d\n", fi);
-    if (fi == -1) {
+    if (fi < 0) {
         return -1;
     }
     // Check pathname and get last entry.
