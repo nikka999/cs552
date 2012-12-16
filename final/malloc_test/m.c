@@ -1164,7 +1164,7 @@ int kunlink(char *pathname) {
     char *last = (char *)malloc(14);
     short super_inode;
     int retp = check_pathname(pathname, last, &super_inode);
-    printf("retp = %d\n", retp);
+    printf("Deleting inode = %d\n", retp);
     if (retp == 0 || retp == -1) {
         // does not exist file or error
         return -1;
