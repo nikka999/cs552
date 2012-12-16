@@ -1,4 +1,4 @@
 all:
-	gcc -g -m32 m.c -o m
+	gcc -g -m32 test_file_user.c m.c -o t
 clean:
-	rm m
+	rm t

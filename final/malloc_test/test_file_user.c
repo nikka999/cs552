@@ -17,15 +17,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "m.h"
 
 // #define's to control what tests are performed,
 // comment out a test if you do not wish to perform it
 
 #define TEST1
-#define TEST2
-#define TEST3
-#define TEST4
-#define TEST5
+//#define TEST2
+//#define TEST3
+//#define TEST4
+//#define TEST5
 
 // #define's to control whether single indirect or
 // double indirect block pointers are tested
@@ -49,6 +50,9 @@ static char addr[PTRS_PB*PTRS_PB*BLK_SZ+1]; /* Scratchpad memory */
 
 int main () {
     
+    // INIT FS HERE
+    init_fs();
+    
   int retval, i;
   int fd;
   int index_node_number;
@@ -70,10 +74,10 @@ int main () {
   for (i = 0; i < MAX_FILES + 1; i++) { // go beyond the limit
     sprintf (pathname, "/file%d", i);
     
-    retval = rd_creat (pathname);
+    retval = kcreat (pathname);
     
     if (retval < 0) {
-      fprintf (stderr, "rd_create: File creation error! status: %d\n", 
+      fprintf (stderr, "kcreate: File creation error! status: %d\n", 
 	       retval);
       
       if (i != MAX_FILES)
@@ -87,10 +91,10 @@ int main () {
   for (i = 0; i < MAX_FILES; i++) { 
     sprintf (pathname, "/file%d", i);
     
-    retval = rd_unlink (pathname);
+    retval = kunlink (pathname);
     
     if (retval < 0) {
-      fprintf (stderr, "rd_unlink: File deletion error! status: %d\n", 
+      fprintf (stderr, "kunlink: File deletion error! status: %d\n", 
 	       retval);
       
       exit (1);
@@ -107,19 +111,19 @@ int main () {
 
   
   /* Generate one LARGEST file */
-  retval = rd_creat ("/bigfile");
+  retval = kcreat ("/bigfile");
 
   if (retval < 0) {
-    fprintf (stderr, "rd_creat: File creation error! status: %d\n", 
+    fprintf (stderr, "kcreat: File creation error! status: %d\n", 
 	     retval);
 
     exit (1);
   }
 
-  retval =  rd_open ("/bigfile"); /* Open file to write to it */
+  retval =  kopen ("/bigfile"); /* Open file to write to it */
   
   if (retval < 0) {
-    fprintf (stderr, "rd_open: File open error! status: %d\n", 
+    fprintf (stderr, "kopen: File open error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -128,10 +132,10 @@ int main () {
   fd = retval;			/* Assign valid fd */
 
   /* Try writing to all direct data blocks */
-  retval = rd_write (fd, data1, sizeof(data1));
+  retval = kwrite (fd, data1, sizeof(data1));
   
   if (retval < 0) {
-    fprintf (stderr, "rd_write: File write STAGE1 error! status: %d\n", 
+    fprintf (stderr, "kwrite: File write STAGE1 error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -140,10 +144,10 @@ int main () {
 #ifdef TEST_SINGLE_INDIRECT
   
   /* Try writing to all single-indirect data blocks */
-  retval = rd_write (fd, data2, sizeof(data2));
+  retval = kwrite (fd, data2, sizeof(data2));
   
   if (retval < 0) {
-    fprintf (stderr, "rd_write: File write STAGE2 error! status: %d\n", 
+    fprintf (stderr, "kwrite: File write STAGE2 error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -152,10 +156,10 @@ int main () {
 #ifdef TEST_DOUBLE_INDIRECT
 
   /* Try writing to all double-indirect data blocks */
-  retval = rd_write (fd, data3, sizeof(data3));
+  retval = kwrite (fd, data3, sizeof(data3));
   
   if (retval < 0) {
-    fprintf (stderr, "rd_write: File write STAGE3 error! status: %d\n", 
+    fprintf (stderr, "kwrite: File write STAGE3 error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -170,20 +174,20 @@ int main () {
 #ifdef TEST3
 
   /* ****TEST 3: Seek and Read file test**** */
-  retval = rd_lseek (fd, 0);	/* Go back to the beginning of your file */
+  retval = klseek (fd, 0);	/* Go back to the beginning of your file */
 
   if (retval < 0) {
-    fprintf (stderr, "rd_lseek: File seek error! status: %d\n", 
+    fprintf (stderr, "klseek: File seek error! status: %d\n", 
 	     retval);
 
     exit (1);
   }
 
   /* Try reading from all direct data blocks */
-  retval = rd_read (fd, addr, sizeof(data1));
+  retval = kread (fd, addr, sizeof(data1));
   
   if (retval < 0) {
-    fprintf (stderr, "rd_read: File read STAGE1 error! status: %d\n", 
+    fprintf (stderr, "kread: File read STAGE1 error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -194,10 +198,10 @@ int main () {
 #ifdef TEST_SINGLE_INDIRECT
 
   /* Try reading from all single-indirect data blocks */
-  retval = rd_read (fd, addr, sizeof(data2));
+  retval = kread (fd, addr, sizeof(data2));
   
   if (retval < 0) {
-    fprintf (stderr, "rd_read: File read STAGE2 error! status: %d\n", 
+    fprintf (stderr, "kread: File read STAGE2 error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -208,10 +212,10 @@ int main () {
 #ifdef TEST_DOUBLE_INDIRECT
 
   /* Try reading from all double-indirect data blocks */
-  retval = rd_read (fd, addr, sizeof(data3));
+  retval = kread (fd, addr, sizeof(data3));
   
   if (retval < 0) {
-    fprintf (stderr, "rd_read: File read STAGE3 error! status: %d\n", 
+    fprintf (stderr, "kread: File read STAGE3 error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -224,10 +228,10 @@ int main () {
 #endif // TEST_SINGLE_INDIRECT
 
   /* Close the bigfile */
-  retval = rd_close (fd);
+  retval = kclose (fd);
   
   if (retval < 0) {
-    fprintf (stderr, "rd_close: File close error! status: %d\n", 
+    fprintf (stderr, "kclose: File close error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -235,10 +239,10 @@ int main () {
 
   /* Remove the biggest file */
 
-  retval = rd_unlink ("/bigfile");
+  retval = kunlink ("/bigfile");
 	
   if (retval < 0) {
-    fprintf (stderr, "rd_unlink: /bigfile file deletion error! status: %d\n", 
+    fprintf (stderr, "kunlink: /bigfile file deletion error! status: %d\n", 
 	     retval);
     
     exit (1);
@@ -249,37 +253,37 @@ int main () {
 #ifdef TEST4
   
   /* ****TEST 4: Make directory and read directory entries**** */
-  retval = rd_mkdir ("/dir1");
+  retval = kmkdir ("/dir1");
     
   if (retval < 0) {
-    fprintf (stderr, "rd_mkdir: Directory 1 creation error! status: %d\n", 
+    fprintf (stderr, "kmkdir: Directory 1 creation error! status: %d\n", 
 	     retval);
 
     exit (1);
   }
 
-  retval = rd_mkdir ("/dir1/dir2");
+  retval = kmkdir ("/dir1/dir2");
     
   if (retval < 0) {
-    fprintf (stderr, "rd_mkdir: Directory 2 creation error! status: %d\n", 
+    fprintf (stderr, "kmkdir: Directory 2 creation error! status: %d\n", 
 	     retval);
 
     exit (1);
   }
 
-  retval = rd_mkdir ("/dir1/dir3");
+  retval = kmkdir ("/dir1/dir3");
     
   if (retval < 0) {
-    fprintf (stderr, "rd_mkdir: Directory 3 creation error! status: %d\n", 
+    fprintf (stderr, "kmkdir: Directory 3 creation error! status: %d\n", 
 	     retval);
 
     exit (1);
   }
 
-  retval =  rd_open ("/dir1"); /* Open directory file to read its entries */
+  retval =  kopen ("/dir1"); /* Open directory file to read its entries */
   
   if (retval < 0) {
-    fprintf (stderr, "rd_open: Directory open error! status: %d\n", 
+    fprintf (stderr, "kopen: Directory open error! status: %d\n", 
 	     retval);
 
     exit (1);
@@ -289,10 +293,10 @@ int main () {
 
   memset (addr, 0, sizeof(addr)); /* Clear scratchpad memory */
 
-  while ((retval = rd_readdir (fd, addr))) { /* 0 indicates end-of-file */
+  while ((retval = kreaddir (fd, addr))) { /* 0 indicates end-of-file */
 
     if (retval < 0) {
-      fprintf (stderr, "rd_readdir: Directory read error! status: %d\n", 
+      fprintf (stderr, "kreaddir: Directory read error! status: %d\n", 
 	       retval);
       
       exit (1);
@@ -320,10 +324,10 @@ int main () {
     for (i = 0; i < 300; i++) { 
       sprintf (pathname, "/file_p_%d", i);
       
-      retval = rd_creat (pathname);
+      retval = kcreat (pathname);
       
       if (retval < 0) {
-	fprintf (stderr, "(Parent) rd_create: File creation error! status: %d\n", 
+	fprintf (stderr, "(Parent) kcreate: File creation error! status: %d\n", 
 		 retval);
 
 	exit(1);
@@ -338,10 +342,10 @@ int main () {
     for (i = 0; i < 300; i++) { 
       sprintf (pathname, "/file_c_%d", i);
       
-      retval = rd_creat (pathname);
+      retval = kcreat (pathname);
       
       if (retval < 0) {
-	fprintf (stderr, "(Child) rd_create: File creation error! status: %d\n", 
+	fprintf (stderr, "(Child) kcreate: File creation error! status: %d\n", 
 		 retval);
 
 	exit(1);

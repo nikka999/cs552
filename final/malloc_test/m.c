@@ -12,9 +12,11 @@
 struct fd *fd_table[1024];
 struct Ramdisk *rd;
 
+char dir[4] = "dir";
+char reg[4] = "reg";
 
 
-void init_fs() {
+int init_fs() {
     printf("INIT\n");
     // INIT FILESYSTEM:
     rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
@@ -1265,6 +1267,7 @@ int kreaddir(int fd, char *address) {
     }
 }
 
+/*
 int main() {
     init_fs();
     unsigned char *partition_block_location = (rd->bb.byte);
@@ -1281,18 +1284,18 @@ int main() {
     
     // printf("\n");
     
-    /**
+    
     // Test write from inode
-    unsigned char file[500] ="0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------====";
-    int nnnnnn = set_inode_reg_file(file, 1,  sizeof(file));
-    printf("Size=?%d, Allocated?=%d\n", (int)sizeof(file), nnnnnn);
-    printf("%s\n", GET_FROM_LOCATION(1, 0));
+    //unsigned char file[500] ="0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------0123456789------====";
+    //int nnnnnn = set_inode_reg_file(file, 1,  sizeof(file));
+    //printf("Size=?%d, Allocated?=%d\n", (int)sizeof(file), nnnnnn);
+    //printf("%s\n", GET_FROM_LOCATION(1, 0));
     // Test read from inode
-    int file_size = 500;
-    unsigned char *file_read = (unsigned char *)malloc(file_size);
-    int nnnnnm = get_inode_reg_file(1, file_size, file_read);
-    printf("GET_FILE=\n%s\n", file_read);
-    */
+    //int file_size = 500;
+    //unsigned char *file_read = (unsigned char *)malloc(file_size);
+    //int nnnnnm = get_inode_reg_file(1, file_size, file_read);
+    //printf("GET_FILE=\n%s\n", file_read);
+    
     
 
     // for testing
@@ -1429,4 +1432,5 @@ int main() {
     // Test freeing a block. directly
 
 }
+*/
 
