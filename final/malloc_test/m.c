@@ -133,6 +133,110 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 		return current_index;
 	return 0;
 }
+//recursive search
+int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
+	int i,k,j,z; 
+	struct Inode inode;
+	struct Block_dir bd;
+	struct Block_ptr bp;
+	union Block *blk, *dblk;
+	inode = GET_INODE_BY_INDEX(cnode);
+	if (!strcmp(inode.type, "reg"))
+		return -1;
+	for (i = 0; i < 8; i++) {
+		if (inode.blocks[i] != 0)
+			bd = inode.blocks[i]->dir;
+		else
+			continue;
+		for (k = 0; k < 16; k++) {
+			if(bd.ent[k].inode_number == tnode)
+				return 1;
+			else {
+				array[*size] = bd.ent[k].inode_number;
+				*size+=1;
+				if (recursive_inode_search(array, size, bd.ent[k].inode_number, tnode) == 1)
+					return 1;
+				*size-=1;
+				array[*size] = 0;
+			}
+				
+		}
+	}
+	for (i = 8; i < 10; i++) {
+		if (inode.blocks[i] != 0)
+			bp = inode.blocks[i]->ptr;
+		else
+			continue;
+		for (k = 0; k < BLOCK_SIZE/4; k++) {
+			blk = bp.blocks[k];
+			bd = blk->dir;
+			if (i == 8) {
+				for (j = 0; j < 16; j++) {
+					if(bd.ent[j].inode_number == tnode) {
+						return 1;
+					}
+					else {
+						array[*size] = bd.ent[j].inode_number;
+						*size+=1;
+						if (recursive_inode_search(array, size, bd.ent[j].inode_number, tnode) == 1)
+							return 1;
+						*size-=1;
+						array[*size] = 0;
+					}
+				} 				
+			}
+			else {
+				for (j = 0; j < BLOCK_SIZE/4; j++) {
+					dblk = blk->ptr.blocks[j];
+					bd = dblk->dir;					
+					for (z = 0; z < 16; z++) {
+						if(bd.ent[z].inode_number == tnode) {
+							return 1;
+						}
+						else {
+							array[*size] = bd.ent[j].inode_number;
+							*size+=1;
+							if (recursive_inode_search(array, size, bd.ent[z].inode_number, tnode) == 1)
+								return 1;
+							*size-=1;
+							array[*size] = 0;
+						}
+					}
+				}
+			}
+		}		
+	}
+	//node does not exist here
+	return 0;
+}
+//exhaustive search to find
+int parent_inode_index_trace(short inode, short *trace) {
+	int size = 1, node = 0, found = 0;
+	//allocate minimum space for array
+	//root inode will always be 0
+	short fotrace[1024];
+	fotrace[0] = 0;
+	found = recursive_inode_search(fotrace, &size, 0, inode);
+	if (!found)
+		return -1; //fieldname not found
+	// trace = (short *)calloc(size, sizeof(short));
+	memcpy(trace, fotrace, size * sizeof(short));
+	return size;
+}
+
+int recursive_inode_size_add(short inode, int size) {
+	short parent_array[1024];
+	int array_size, i, t;
+	array_size = parent_inode_index_trace(inode, parent_array);
+	if (array_size < 0)
+		return -1;
+	for (i = 0; i < array_size; i++) {
+		t = GET_INODE_SIZE(parent_array[i]);
+		SET_INODE_SIZE(parent_array[i], t+size);
+	}
+	SET_INODE_SIZE(inode, size);
+	return 0;
+}
 
 int find_free_block() {
     // Find a new free block, using first-fit. NOTE: before returning, we SET THE BITMAP = 1 !!!!!!
@@ -816,7 +920,8 @@ int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
         // Actually write back to filesystem
         write_to_fs(inode, ist, MAX_FILE_SIZE);
         // Set Inode new size
-        SET_INODE_SIZE(inode, MAX_FILE_SIZE);
+		recursive_inode_size_add(inode, MAX_FILE_SIZE);		
+        // SET_INODE_SIZE(inode, MAX_FILE_SIZE);
         // Increment fd position
         fd_table[inode]->write_pos = MAX_FILE_SIZE;
 		free(ist);
@@ -826,8 +931,9 @@ int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
         memcpy(ist + write_pos, temp, num_bytes);
         // Actually write back to filesystem
         write_to_fs(inode, ist, write_pos + num_bytes);
-        // Set Inode new size
-        SET_INODE_SIZE(inode, write_pos + num_bytes);
+        // Set new size for inode and recursively for all parent dirs		
+		recursive_inode_size_add(inode, write_pos + num_bytes);
+        // SET_INODE_SIZE(inode, write_pos + num_bytes);
         // Increment fd position
         fd_table[inode]->write_pos = write_pos + num_bytes;
 		free(ist);
@@ -1064,7 +1170,9 @@ int main() {
 	kmkdir(another);
     printf("%d\n", get_inode_index(1, "yeah"));
     char *path2 = "/home/test";
+	char *path3 = "/home/test2";
     kcreat(path2);
+    kcreat(path3);
     printf("%d\n", get_inode_index(1, "test"));
 
 
@@ -1088,11 +1196,18 @@ int main() {
 
     
     int i = kopen(path2);
+	int k = kopen(path3);
 	char *content = "im writing some stuff!";
+	char *lol = "lolz";
 	int ss = strlen(content)+1;
+	int kk = strlen(lol)+1;
 	kwrite(i, content, ss);
+	kwrite(k, lol, kk);
 	char *stuff;
 	stuff = (char *)malloc(ss);
+	printf("this is the size of /home/test: %d\n", GET_INODE_SIZE(i));
+	printf("this is the size of /home/test2: %d\n", GET_INODE_SIZE(k));
+	printf("this is the size of /home: %d\n", GET_INODE_SIZE(1));
 	kread(i, stuff, ss);
 	printf("i just read this: %s\n", stuff);
     char *add= (char *)malloc(16);
