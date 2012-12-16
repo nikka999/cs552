@@ -67,17 +67,13 @@ int get_inode_index (int node, char *pathname) {
 				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-                    printf("checkpath name=%s, %s\n", pathname, bd.ent[j].filename);
 					if(!strcmp(bd.ent[j].filename, pathname)) {
-                        printf("checkpath name=%s, %d\n", pathname, j);
 						return bd.ent[j].inode_number;
 					}
 				} 				
 			}
 			else {
-                printf("checkpath nameeeeee=%s\n", pathname);
 				for (j = 0; j < BLOCK_SIZE/4; j++) {
-                    printf("checkpath name=%s, %d\n", pathname, j);
 					dblk = blk->ptr.blocks[j];
 					if (dblk != 0)
 						bd = blk->dir;
@@ -1193,6 +1189,7 @@ int kunlink(char *pathname) {
 				delete_dir_entry(super_inode, last);
 				INCR_FREEINODE;
                 // 2. Go to super_inode and remove inode entry
+                return 0;
                 
             }
         }
@@ -1207,6 +1204,7 @@ int kunlink(char *pathname) {
 			recursive_pathname_size_decr(pathname, reg_size);
 			INCR_FREEINODE;
             // 4. Traverse filesystem and minus file_size on all super inodes.
+            return 0;
         }
     }
 }
