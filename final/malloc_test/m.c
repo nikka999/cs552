@@ -27,9 +27,6 @@ void init_fs() {
     // DONT ALLOCATE PARTITION BLOCK FOR ROOT NOW. DO IT WHEN IT IS NEEDED
     INIT_FREEINODE;
     INIT_FREEBLOCK;
-    // Mark bitmap for root
-    SET_BITMAP_ALLOCATE_BLOCK(0);
-    DECR_FREEBLOCK; // -1 for ROOT
     DECR_FREEINODE; // -1 for ROOT
     // EOF init
 }
@@ -146,7 +143,7 @@ int find_free_block() {
         int j = 0;
         for (j; j < PARTITION_NUMBER; j++) {
             if (SEE_BITMAP_FREE(j) == 1) {
-                //printf("%d\n", j);
+                printf("FREE BLOCK = %d\n", j);
                 // Set bitmap = 1
                 SET_BITMAP_ALLOCATE_BLOCK(j);
                 DECR_FREEBLOCK;
@@ -887,6 +884,31 @@ int klseek(int fd, int offset) {
     }
 }
 
+int unlink_file(int inode) {
+    int i = 0;
+    while(i < 10) {
+        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
+            // No allocated block at i. Nothing to free
+            return 1;
+        } else {
+            // Allocated block at i.
+            if (i >= 0 && i <= 7) {
+                // Remove File Block
+                
+            } else if (i == 8) {
+                // Remove All File Blocks
+                // Then Remove Single redirection block
+            } else if (i == 9) {
+                // Remove All File Blocks
+                // Then Remove All Second Double redirection blocks
+                // Then Remove First double redirection block
+            }
+        }
+        i++;
+    }
+    return 1;
+}
+
 int kunlink(char *pathname) {
     if (pathname[0] == '/' && pathname[1] == '\0') {
         // trying to unlink root
@@ -912,7 +934,9 @@ int kunlink(char *pathname) {
             } else {
                 // file size = 0
                 // 1. Remove dir
+                
                 // 2. Go to super_inode and remove inode entry
+                
             }
         }
         if (memcmp(reg, GET_INODE_TYPE(inode), 3) == 0) {
@@ -996,7 +1020,19 @@ int kreaddir(int fd, char *address) {
 
 int main() {
     init_fs();
+    unsigned char *partition_block_location = (rd->bb.byte);
+    // printf("Partition block starting point: %d\n", *(char *)partition_block_location);
+    // 
+    int zz = 0;
+    // for (zz; zz < 256; zz++) {
+    //     printf("%d ", *((char *)partition_block_location + zz));
+    // }
+
+	void *st = (void *)rd->pb;
+	printf("this is the pointer: %p\n", rd->pb);
+	printf ("this is the pb starting address: %p\n", st);
     
+    // printf("\n");
     
     /**
     // Test write from inode
@@ -1013,9 +1049,11 @@ int main() {
     
 
     // for testing
-    int fb = find_free_block();
-    SET_INODE_LOCATION_BLOCK(0, 0, fb);
+    //int fb = find_free_block();
+    //printf("fb = %d\n", fb);
+    ///SET_INODE_LOCATION_BLOCK(0, 0, fb);
     //
+    
     
     //check_pathname(char *pathname, char* last, short* super_inode)
     
@@ -1029,6 +1067,13 @@ int main() {
     kcreat(path2);
     printf("%d\n", get_inode_index(1, "test"));
 
+
+    zz = 0;
+    for (zz; zz < 512; zz++) {
+        printf("%d ", *((char *)st + zz));
+    }
+    
+    printf("\n");
     
     //unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
     //int size = build_inode_structure(0, ist);
