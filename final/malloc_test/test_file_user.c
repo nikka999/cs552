@@ -23,9 +23,9 @@
 // comment out a test if you do not wish to perform it
 
 //#define TEST1
-#define TEST2
+//#define TEST2
 //#define TEST3
-//#define TEST4
+#define TEST4
 //#define TEST5
 
 // #define's to control whether single indirect or
@@ -306,7 +306,14 @@ int main () {
       
       exit (1);
     }
-
+      /*
+      printf("user\n");
+      int zz = 0;
+      for (zz; zz < 16; zz++) {
+          printf("%d ", *((unsigned char *)addr + zz));
+      }
+      printf("\n");
+       */
     index_node_number = atoi(&addr[14]);
     printf ("Contents at addr: [%s,%d]\n", addr, index_node_number);
   }
@@ -339,7 +346,7 @@ int main () {
       }
     
       memset (pathname, 0, 80);
-    }  
+    }
     
   }
   else {

@@ -442,7 +442,7 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
     while(i < 10) {
         // If there is allocated block?
         if (GET_INODE_LOCATION_BLOCK(super_inode, i) == 0) {
-            printf("i = %d, is empty\n", i);
+            //printf("i = %d, is empty\n", i);
             // Allocate partition blocks for super_inode
             int fb = find_free_block();
             // Assign free block to super_inode location i.
@@ -710,7 +710,7 @@ int build_inode_structure(short inode, unsigned char *ist) {
     while(i < 10) {
         // If there is allocated block?
         if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
-            printf("i = %d, is empty\n", i);
+            //printf("i = %d, is empty\n", i);
             // No allocated block at i, we can return.
             return position;
         } else {
@@ -1178,7 +1178,19 @@ int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     // Nothing read, return EOF
     return 0;
 }
+int small_itoa(struct Dir_entry *temp_add) {
+    // convert inode number into string.
+    short num = temp_add->inode_number;
+    //printf("num = %d", num);
+    int ten = num/10;
+    int dig = num%10;
+    // 48 = ascii '0'
+    *((unsigned char *)temp_add + 14) = (48 + ten);
+    *((unsigned char *)temp_add + 15) = (48 + dig);
+}
 
+#define USING_ATOI
+// using ATOI only to accomdate test script 4
 int kreaddir(int fd, char *address) {
     // Again, fd=inode index
     if (fd_table[fd] == NULL) {
@@ -1197,9 +1209,17 @@ int kreaddir(int fd, char *address) {
             // no dir entry
             return 0;
         }
+#ifdef USING_ATOI
+        small_itoa(temp_add);
+#endif
 #ifdef debug
         printf("\nret = %d\n", ret);
         printf("%d\n", temp_add->inode_number);
+        int zz = 0;
+        for (zz; zz < 16; zz++) {
+            printf("%d ", *((unsigned char *)temp_add + zz));
+        }
+        printf("\n");
 #endif
         memcpy(address, temp_add, 16);
         
