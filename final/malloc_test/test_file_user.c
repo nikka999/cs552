@@ -22,8 +22,8 @@
 // #define's to control what tests are performed,
 // comment out a test if you do not wish to perform it
 
-//#define TEST1
-#define TEST2
+#define TEST1
+// #define TEST2
 //#define TEST3
 //#define TEST4
 //#define TEST5

@@ -303,9 +303,8 @@ int delete_dir_entry(short node, char *pathname) {
 						if(is_block_empty(blk)) {
 							SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(blk));
 							INCR_FREEBLOCK;
-							blk = NULL;					
+							bp->blocks[k] = NULL;					
 						}
-						// return 0;
 						break;
 					}	
 				}
@@ -328,16 +327,15 @@ int delete_dir_entry(short node, char *pathname) {
 							if(is_block_empty(dblk)) {
 								SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(dblk));
 								INCR_FREEBLOCK;
-								dblk = NULL;					
+								blk->ptr.blocks[j] = NULL;					
 							}
-							// return 0;
 							break;
 						}
 					}
 					if(is_block_empty(blk)) {
 						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(blk));
 						INCR_FREEBLOCK;
-						blk = NULL;					
+						bp->blocks[k] = NULL;					
 					}
 					if(is_block_empty(inode->blocks[i])) {
 						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(inode->blocks[i]));
