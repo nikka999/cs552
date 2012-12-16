@@ -237,6 +237,105 @@ int recursive_inode_size_add(short inode, int size) {
 	SET_INODE_SIZE(inode, size);
 	return 0;
 }
+int delete_dir_entry(short node, char *pathname) {
+	int i,k,j,z;
+	struct Inode *inode;
+	struct Block_dir *bd;
+	struct Block_ptr *bp;
+	union Block *blk, *dblk;
+	inode = &(GET_INODE_BY_INDEX(node));
+	if (!strcmp(inode->type, "reg"))
+		return -1;
+	for (i = 0; i < 8; i++) {
+		if (inode->blocks[i] != 0)
+			bd = &(inode->blocks[i]->dir);
+		else
+			continue;
+		for (k = 0; k < 16; k++) {
+			if(!strcmp(bd->ent[k].filename, pathname)) {
+				memset(&(bd->ent[k]), 0, sizeof(struct Dir_entry));
+				return 0;
+			}
+				
+		}
+	}
+	for (i = 8; i < 10; i++) {
+		if (inode->blocks[i] != 0)
+			bp = &(inode->blocks[i]->ptr);
+		else
+			continue;
+		for (k = 0; k < BLOCK_SIZE/4; k++) {
+			blk = bp->blocks[k];
+			bd = &(blk->dir);
+			if (i == 8) {
+				for (j = 0; j < 16; j++) {
+					if(!strcmp(bd->ent[j].filename, pathname)) {
+						memset(&(bd->ent[j]), 0, sizeof(struct Dir_entry));
+						return 0;
+					}
+				} 				
+			}
+			else {
+				for (j = 0; j < BLOCK_SIZE/4; j++) {
+					dblk = blk->ptr.blocks[j];
+					bd = &(dblk->dir);					
+					for (z = 0; z < 16; z++) {
+						if(!strcmp(bd->ent[z].filename, pathname)) {
+							memset(&(bd->ent[z]), 0, sizeof(struct Dir_entry));
+							return 0;
+						}
+					}
+				}
+			}
+		}		
+	}
+	//fieldname not found
+	return -1;
+}
+int recursive_pathname_size_decr(char *pathname, int b_size) {
+	char name[14];
+	char *slash;
+	unsigned int size;
+	int rc;
+	// struct Inode inode;
+	int node_index = 0;
+	int current_index;
+	// unsigned int dir = 0;
+	memset(name, 0, 14);
+    //validate that user inputed root
+	if (pathname[0] != '/')
+		return -1;
+	size = strnlen(pathname, 100);
+	// if size is 1, then the user only entered '/'
+	if (size < 2)
+		return -1;
+	pathname++;
+	SET_INODE_SIZE(node_index, (GET_INODE_SIZE(node_index)-b_size));	
+	while ((slash = strchr(pathname, '/')) != NULL) {
+		size = slash-pathname;
+		// check if someone typed two slash in row (i.e //)
+		if (size < 1)
+			return -1;
+		// check if fieldname is greater than 14 chars
+		if (size > 14)
+			return -1;
+		strncpy(name, pathname, size);
+		name[size] = '\0';
+		pathname = slash + 1;
+		node_index = get_inode_index(node_index, name);
+		if (node_index < 0)
+			return -1;
+		SET_INODE_SIZE(node_index, (GET_INODE_SIZE(node_index)-b_size));
+	}
+	//means the last character is a / (could use this to create new dir) or just error out
+	if (*pathname == '\0')
+		return -1;
+		// dir = 1;
+	//copy the specified name in final dir to name
+	strncpy(name, pathname, 14);
+	rc = delete_dir_entry(node_index, name);
+	return rc;	
+}
 
 int find_free_block() {
     // Find a new free block, using first-fit. NOTE: before returning, we SET THE BITMAP = 1 !!!!!!
@@ -992,6 +1091,7 @@ int klseek(int fd, int offset) {
 
 int unlink_file(int inode) {
     int i = 0;
+	int k,j;
     while(i < 10) {
         if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
             // No allocated block at i. Nothing to free
@@ -1000,11 +1100,27 @@ int unlink_file(int inode) {
             // Allocated block at i.
             if (i >= 0 && i <= 7) {
                 // Remove File Block
-                
+				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
+				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
             } else if (i == 8) {
-                // Remove All File Blocks
+				for (k = 0; k < BLOCK_SIZE/4; k++) {
+					if(GET_INODE_LOCATION_BLOCK_SIN(inode, k) == 0)
+						return 1;
+					memset(GET_INODE_LOCATION_BLOCK_SIN(inode, k)->reg.byte, 0, 256);
+					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_SIN(inode, k)));
+				}
+				
+				// Remove All File Blocks
                 // Then Remove Single redirection block
             } else if (i == 9) {
+				for (k = 0; k < BLOCK_SIZE/4; k++) {
+					for (j = 0; j < BLOCK_SIZE/4; j++) {
+						if(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j) == 0)
+							return 1;
+						memset(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)->reg.byte, 0, 256);
+						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)));	
+					}
+				}
                 // Remove All File Blocks
                 // Then Remove All Second Double redirection blocks
                 // Then Remove First double redirection block
@@ -1040,7 +1156,9 @@ int kunlink(char *pathname) {
             } else {
                 // file size = 0
                 // 1. Remove dir
-                
+                memset(&(rd->ib[inode]), 0, sizeof(struct Inode));			
+				delete_dir_entry(super_inode, last);
+				INCR_FREEINODE;
                 // 2. Go to super_inode and remove inode entry
                 
             }
@@ -1048,8 +1166,13 @@ int kunlink(char *pathname) {
         if (memcmp(reg, GET_INODE_TYPE(inode), 3) == 0) {
             // Check if it is a reg file
             // 1. Get file size
+			int reg_size = GET_INODE_SIZE(inode);
             // 2. remove file
+			unlink_file(inode);
+			memset(&(rd->ib[inode]), 0, sizeof(struct Inode));			
             // 3. Go to super_inode and remove inode entry
+			recursive_pathname_size_decr(pathname, reg_size);
+			INCR_FREEINODE;
             // 4. Traverse filesystem and minus file_size on all super inodes.
         }
     }
@@ -1210,6 +1333,7 @@ int main() {
 	printf("this is the size of /home: %d\n", GET_INODE_SIZE(1));
 	kread(i, stuff, ss);
 	printf("i just read this: %s\n", stuff);
+	printf("this is partition index: %d\n",GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(3,0)));
     char *add= (char *)malloc(16);
     kreaddir(0, add);
     
@@ -1222,7 +1346,9 @@ int main() {
     
     //printf("%d\n", (struct Dir_entry *)add.inode_number);
     kclose(i);
-    
+	kclose(k);
+	kunlink(path2);
+	printf("stop here");
 #ifdef debug2
     PRINT_FREEINODE_COUNT;
     PRINT_FREEBLOCK_COUNT;
