@@ -1067,12 +1067,23 @@ int main() {
     printf("%d\n", get_inode_index(1, "test"));
 
 
-    zz = 0;
+    zz = 256;
     for (zz; zz < 512; zz++) {
         printf("%d ", *((char *)st + zz));
     }
     
     printf("\n");
+    
+    
+    // Get inode block memory location
+    void *b0 = &(*rd->ib[1].blocks[0]);
+    zz = 0;
+    for (zz; zz < 256; zz++) {
+        printf("%d ", *((char *)b0 + zz));
+    }
+    
+    printf("\n");
+    int p_index = b0 - st;
     
     //unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
     //int size = build_inode_structure(0, ist);
