@@ -1030,9 +1030,9 @@ int main() {
     //     printf("%d ", *((char *)partition_block_location + zz));
     // }
 
-	unsigned int st = (unsigned int)rd->pb;
+	void *st = (void *)rd->pb;
 	printf("this is the pointer: %p\n", rd->pb);
-	printf ("this is the pb starting address: %u\n", st);
+	printf ("this is the pb starting address: %p\n", st);
     
     // printf("\n");
     
