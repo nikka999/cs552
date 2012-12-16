@@ -70,6 +70,8 @@ char reg[4] = "reg";
 #define SEE_BITMAP_ALLOCATE(BLOCK) ((((rd->bb.byte[GET_BYTE_NUMBER(BLOCK)] >> (7-GET_BYTE_OFFSET(BLOCK))) & 0x1) == 1) ? 1 : 0)
 #define SEE_BITMAP_FREE(BLOCK) ((((rd->bb.byte[GET_BYTE_NUMBER(BLOCK)] >> (7-GET_BYTE_OFFSET(BLOCK))) & 0x1) == 0) ? 1 : 0)
 
+//Using block pointer to get element number in partition
+#define GET_BLOCK_INDEX_PARTITION(BLOCK_PTR) (((unsigned int)BLOCK_PTR - (unsigned int)rd->pb) / 256)
 
 /** Partition */
 #define PARTITION_SIZE (RAMDISK_SIZE-(256*(1+256+4)))
