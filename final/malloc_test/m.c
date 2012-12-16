@@ -1102,25 +1102,39 @@ int unlink_file(int inode) {
                 // Remove File Block
 				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
 				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
+				INCR_FREEBLOCK;
             } else if (i == 8) {
 				for (k = 0; k < BLOCK_SIZE/4; k++) {
 					if(GET_INODE_LOCATION_BLOCK_SIN(inode, k) == 0)
-						return 1;
+						break;
 					memset(GET_INODE_LOCATION_BLOCK_SIN(inode, k)->reg.byte, 0, 256);
 					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_SIN(inode, k)));
+					INCR_FREEBLOCK;
 				}
+				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
+				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
+				INCR_FREEBLOCK;
 				
 				// Remove All File Blocks
                 // Then Remove Single redirection block
             } else if (i == 9) {
 				for (k = 0; k < BLOCK_SIZE/4; k++) {
+					if(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k) == 0)
+						break;
 					for (j = 0; j < BLOCK_SIZE/4; j++) {
 						if(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j) == 0)
-							return 1;
+							break;
 						memset(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)->reg.byte, 0, 256);
-						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)));	
+						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)));
+						INCR_FREEBLOCK;
 					}
+					memset(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k)->reg.byte, 0, 256);
+					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k)));
+					INCR_FREEBLOCK;
 				}
+				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
+				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
+				INCR_FREEBLOCK;
                 // Remove All File Blocks
                 // Then Remove All Second Double redirection blocks
                 // Then Remove First double redirection block
@@ -1145,6 +1159,10 @@ int kunlink(char *pathname) {
         return -1;
     }
     if (retp > 0) {
+		if (fd_table[retp] != NULL) {
+	        // fd is already open
+	        return -1;
+	    }
         // File exist, we can strart to remove
         // Get inode number
         int inode = retp;
@@ -1331,7 +1349,7 @@ int main() {
     
     int i = kopen(path2);
 	int k = kopen(path3);
-	char *content = "im writing some stuff!";
+	char *content = "im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuffim writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuffim writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuffim writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff!im writing some stuff";
 	char *lol = "lolz";
 	int ss = strlen(content)+1;
 	int kk = strlen(lol)+1;
@@ -1354,7 +1372,7 @@ int main() {
         printf("%d ", add[ij]);
     }
     printf("\n");
-    
+	free(add);
     //printf("%d\n", (struct Dir_entry *)add.inode_number);
     kclose(i);
 	kclose(k);
