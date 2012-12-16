@@ -1,3 +1,14 @@
+int init_fs();
+int kcreat(char *pathname);
+int kmkdir(char *pathname);
+int kopen(char *pathname);
+int kclose(int fd);
+int kread(int fd, char *address, int num_bytes);
+int kwrite(int fd, char *address, int num_bytes);
+int klseek(int fd, int offset);
+int kunlink(char *pathname);
+int kreaddir(int fd, char *address);
+
 #define BLOCK_SIZE 256
 #define RAMDISK_SIZE (2*1024*1024)
 
@@ -18,8 +29,7 @@
 #define INODEBLOCK_SIZE (BLOCK_SIZE * INODEBLOCK_NUMBER)
 #define INODE_SIZE 64
 #define INODE_NUMBER (INODEBLOCK_SIZE/INODE_SIZE)
-char dir[4] = "dir";
-char reg[4] = "reg";
+
 #define GET_INODE_TYPE(INDEX) (rd->ib[INDEX].type)
 #define SET_INODE_TYPE_DIR(INDEX); {memcpy(rd->ib[INDEX].type, dir, 4);}
 #define SET_INODE_TYPE_REG(INDEX); {memcpy(rd->ib[INDEX].type, reg, 4);}
