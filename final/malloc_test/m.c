@@ -27,9 +27,6 @@ void init_fs() {
     // DONT ALLOCATE PARTITION BLOCK FOR ROOT NOW. DO IT WHEN IT IS NEEDED
     INIT_FREEINODE;
     INIT_FREEBLOCK;
-    // Mark bitmap for root
-    SET_BITMAP_ALLOCATE_BLOCK(0);
-    DECR_FREEBLOCK; // -1 for ROOT
     DECR_FREEINODE; // -1 for ROOT
     // EOF init
 }
@@ -146,7 +143,7 @@ int find_free_block() {
         int j = 0;
         for (j; j < PARTITION_NUMBER; j++) {
             if (SEE_BITMAP_FREE(j) == 1) {
-                //printf("%d\n", j);
+                printf("FREE BLOCK = %d\n", j);
                 // Set bitmap = 1
                 SET_BITMAP_ALLOCATE_BLOCK(j);
                 DECR_FREEBLOCK;
@@ -1051,9 +1048,9 @@ int main() {
     
 
     // for testing
-    int fb = find_free_block();
-    printf("fb = %d\n", fb);
-    SET_INODE_LOCATION_BLOCK(0, 0, fb);
+    //int fb = find_free_block();
+    //printf("fb = %d\n", fb);
+    ///SET_INODE_LOCATION_BLOCK(0, 0, fb);
     //
     
     
@@ -1071,8 +1068,8 @@ int main() {
 
 
     zz = 0;
-    for (zz; zz < 256; zz++) {
-        printf("%d ", *((char *)partition_block_location + zz));
+    for (zz; zz < 512; zz++) {
+        printf("%d ", *((char *)st + zz));
     }
     
     printf("\n");
