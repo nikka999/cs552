@@ -22,8 +22,8 @@
 // #define's to control what tests are performed,
 // comment out a test if you do not wish to perform it
 
-#define TEST1
-//#define TEST2
+//#define TEST1
+#define TEST2
 //#define TEST3
 //#define TEST4
 //#define TEST5
@@ -120,6 +120,8 @@ int main () {
     exit (1);
   }
 
+    printf("kcreat succesful\n");
+    
   retval =  kopen ("/bigfile"); /* Open file to write to it */
   
   if (retval < 0) {
@@ -129,6 +131,7 @@ int main () {
     exit (1);
   }
 
+    printf("kopen succesful\n");
   fd = retval;			/* Assign valid fd */
 
   /* Try writing to all direct data blocks */
@@ -141,11 +144,12 @@ int main () {
     exit (1);
   }
 
+    printf("kwrite direct succesful\n");
 #ifdef TEST_SINGLE_INDIRECT
   
   /* Try writing to all single-indirect data blocks */
   retval = kwrite (fd, data2, sizeof(data2));
-  
+    printf("kwrite 1 actually writes = %d, suppose to write = %d\n", retval, sizeof(data2));
   if (retval < 0) {
     fprintf (stderr, "kwrite: File write STAGE2 error! status: %d\n", 
 	     retval);
@@ -153,6 +157,7 @@ int main () {
     exit (1);
   }
 
+    printf("kwrite 1 indirect succesful\n");
 #ifdef TEST_DOUBLE_INDIRECT
 
   /* Try writing to all double-indirect data blocks */

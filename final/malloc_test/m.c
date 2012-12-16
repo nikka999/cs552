@@ -973,8 +973,9 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                 position += 256;
             } else if (i == 8) {
                 // 8 is single redirection block
-                int j = 0;
+                int j = 1;
                 for (j; j < (256/4); j++) {
+                    printf("all 8, j=%d\n", j);
                     // Loop through the redirection block, j is PTR_ENTRY
                     if (GET_INODE_LOCATION_BLOCK_SIN(inode, j) == 0) {
                         // If it equals 0, then there are NO file block allocated.
@@ -1029,7 +1030,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                         position += 256;
                     } else {
                         // There is a second redirection block.
-                        int k = 0;
+                        int k = 1;
                         for (k; k < (256/4); k++) {
                             // Loop through the second redirection block, k is PTR_ENT2
                             if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
