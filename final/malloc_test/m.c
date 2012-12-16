@@ -960,7 +960,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                 }
             } else if (i == 9) {
                 // 9 is double redirection block
-                int j = 1;
+                int j = 0;
                 for (j; j < (256/4); j++) {
                     // Loop through the first redirection block, j is PTR_ENT1
                     if (GET_INODE_LOCATION_BLOCK_DOB_FST(inode, j) == 0) {
@@ -984,7 +984,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                         position += 256;
                     } else {
                         // There is a second redirection block.
-                        int k = 0;
+                        int k = 1;
                         for (k; k < (256/4); k++) {
                             // Loop through the second redirection block, k is PTR_ENT2
                             if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
