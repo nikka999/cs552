@@ -67,9 +67,7 @@ int get_inode_index (int node, char *pathname) {
 				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-                    printf("checkpath name=%s, %d\n", pathname, j);
 					if(!strcmp(bd.ent[j].filename, pathname)) {
-                        printf("checkpath name=%s, %d\n", pathname, j);
 						return bd.ent[j].inode_number;
 					}
 				} 				
@@ -1171,7 +1169,7 @@ int kunlink(char *pathname) {
     char *last = (char *)malloc(14);
     short super_inode;
     int retp = check_pathname(pathname, last, &super_inode);
-    printf("retp = %d\n", retp);
+    printf("Deleting inode = %d\n", retp);
     if (retp == 0 || retp == -1) {
         // does not exist file or error
         return -1;
@@ -1196,6 +1194,7 @@ int kunlink(char *pathname) {
 				delete_dir_entry(super_inode, last);
 				INCR_FREEINODE;
                 // 2. Go to super_inode and remove inode entry
+                return 0;
                 
             }
         }
@@ -1210,6 +1209,7 @@ int kunlink(char *pathname) {
 			recursive_pathname_size_decr(pathname, reg_size);
 			INCR_FREEINODE;
             // 4. Traverse filesystem and minus file_size on all super inodes.
+            return 0;
         }
     }
 }
