@@ -887,186 +887,63 @@ int check_for_last_write(int size, int ptr_count, unsigned char *file, int fb) {
 }
 
 int write_to_fs(short inode, unsigned char *ist, int new_size) {
-    /**
-     * This function can be use for kwrite to actually write to fs
-     * WE SIMPLY JUST OVERWRITE ALLLLLLL DATA
-     */
-    // Traverse through all possible location
-    int i = 0; // Location blocks
-    int position = 0; // Position can also be used as a counter for size.
-    while(i < 10) {
-        // If there is allocated block?
-        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
-            // No allocated block at i
-            if (i >= 0 && i <= 7) {
-                // 1~ 7 is direct block
-                // 1. Allocate new block
-                int fb = find_free_block();
-                // 2. Assign new block to inode location i
-                ASSIGN_LOCATION(inode, i, fb);
-                // 3. Write file in
-                if ((new_size - position) <= 256) {
-                    // This is the last block
-                    WRITE_TO_LOCATION(inode, i, (ist + position), (new_size - position));
-                    position += (new_size - position);
-                    return 1;
-                }
-                WRITE_TO_LOCATION(inode, i, (ist + position), 256);
-                position += 256;
-            } else if (i == 8) {
-                // 8 is single redirection block
-                // 1. Allocate new block
-                int fb = find_free_block();
-                // 2. Assign new block to inode location 8
-                ASSIGN_LOCATION(inode, 8, fb);
-                // 3. Allocate a new block for file block
-                int fb2 = find_free_block();
-                // 4. Assign file block to PTR_ENT = 0
-                ASSIGN_LOCATION_SINGLE_RED(inode, 0, fb2);
-                // 5. Write File in
-                if ((new_size - position) <= 256) {
-                    // This is the last block
-                    WRITE_TO_LOCATION_SINGLE_RED(inode, 0, (ist + position), (new_size - position));
-                    position += (new_size - position);
-                    return 1;
-                }
-                WRITE_TO_LOCATION_SINGLE_RED(inode, 0, (ist + position), 256);
-                position += 256;
-				continue;
-            } else if (i == 9) {
-                // 9 is double redirection block
-                // 1. Allocate new block
-                int fb = find_free_block();
-                // 2. Assign new block to inode location 9
-                ASSIGN_LOCATION(inode, 9, fb);
-                // 3. Allocate a new block for second redirection block
-                int fb2 = find_free_block();
-                // 4. Assign 2nd redir block to PTR_ENT1 = 0
-                ASSIGN_LOCATION_DOUBLE_FST_RED(inode, 0, fb2);
-                // 5. Allocate a new block for file block
-                int fb3 = find_free_block();
-                // 6. Assign file bock to PTR_ENT2=0
-                ASSIGN_LOCATION_DOUBLE_SND_RED(inode, 0, 0, fb3);
-                // 7. Write File in
-                if ((new_size - position) <= 256) {
-                    // This is the last block
-                    WRITE_TO_LOCATION_DOUBLE_RED(inode, 0, 0, (ist + position), (new_size - position));
-                    position += (new_size - position);
-                    return 1;
-                }
-                WRITE_TO_LOCATION_DOUBLE_RED(inode, 0, 0, (ist + position), 256);
-                position += 256;
-				continue;
-            }
-        } else {
-            // Block already allocated. Loop though all blocks and write to block
-            if (i >= 0 && i <= 7) {
-                // 1~ 7 is direct block
-                // Since there is a block allocated, we can just copy the entire block.
-                if ((new_size - position) <= 256) {
-                    // This is the last block
-                    WRITE_TO_LOCATION(inode, i, (ist + position), (new_size - position));
-                    position += (new_size - position);
-                    return 1;
-                }
-                memcpy(GET_INODE_LOCATION_BLOCK(inode, i), (ist + position), 256);
-                position += 256;
-            } else if (i == 8) {
-                // 8 is single redirection block
-                int j = 1;
-                for (j; j < (256/4); j++) {
-                    printf("all 8, j=%d\n", j);
-                    // Loop through the redirection block, j is PTR_ENTRY
-                    if (GET_INODE_LOCATION_BLOCK_SIN(inode, j) == 0) {
-                        // If it equals 0, then there are NO file block allocated.
-                        // 1. Allocate new block
-                        int fb = find_free_block();
-                        // 2. Assign new block as file block to PTR_ENT = j
-                        ASSIGN_LOCATION_SINGLE_RED(inode, j, fb);
-                        // 3. Write file in
-                        if ((new_size - position) <= 256) {
-                            // This is the last block
-                            WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), (new_size - position));
-                            position += (new_size - position);
-                            return 1;
-                        }
-                        WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), 256);
-                        position += 256;
-                    } else {
-                        // A file block is allocated
-                        if ((new_size - position) <= 256) {
-                            // This is the last block
-                            WRITE_TO_LOCATION(inode, j, (ist + position), (new_size - position));
-                            position += (new_size - position);
-                            return 1;
-                        }
-                        WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), 256);
-                        position += 256;
-                    }
-                }
-            } else if (i == 9) {
-                // 9 is double redirection block
-                int j = 0;
-                for (j; j < (256/4); j++) {
-                    // Loop through the first redirection block, j is PTR_ENT1
-                    if (GET_INODE_LOCATION_BLOCK_DOB_FST(inode, j) == 0) {
-                        // There is no second redirection block.
-                        // 1. Allocate a new block for second redirection block
-                        int fb2 = find_free_block();
-                        // 2. Assign 2nd redir block to PTR_ENT1 = j
-                        ASSIGN_LOCATION_DOUBLE_FST_RED(inode, j, fb2);
-                        // 3. Allocate a new block for file block
-                        int fb3 = find_free_block();
-                        // 4. Assign file bock to PTR_ENT2=0
-                        ASSIGN_LOCATION_DOUBLE_SND_RED(inode, j, 0, fb3);
-                        // 5. Write File in
-                        if ((new_size - position) <= 256) {
-                            // This is the last block
-                            WRITE_TO_LOCATION(inode, i, (ist + position), (new_size - position));
-                            position += (new_size - position);
-                            return 1;
-                        }
-                        WRITE_TO_LOCATION_DOUBLE_RED(inode, j, 0, (ist + position), 256);
-                        position += 256;
-                    } else {
-                        // There is a second redirection block.
-                        int k = 1;
-                        for (k; k < (256/4); k++) {
-                            // Loop through the second redirection block, k is PTR_ENT2
-                            if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
-                                // There is no File block
-                                // 1. Allocate a new block for file block
-                                int fb3 = find_free_block();
-                                // 2. Assign file bock to PTR_ENT2=k
-                                ASSIGN_LOCATION_DOUBLE_SND_RED(inode, j, k, fb3);
-                                // 3. Write File in
-                                if ((new_size - position) <= 256) {
-                                    // This is the last block
-                                    WRITE_TO_LOCATION_DOUBLE_RED(inode, i, k, (ist + position), (new_size - position));
-                                    position += (new_size - position);
-                                    return 1;
-                                }
-                                WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), 256);
-                                position += 256;
-                            } else {
-                                // There is a File block
-                                if ((new_size - position) <= 256) {
-                                    // This is the last block
-                                    WRITE_TO_LOCATION_DOUBLE_RED(inode, i, k, (ist + position), (new_size - position));
-                                    position += (new_size - position);
-                                    return 1;
-                                }
-                                WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), 256);
-                                position += 256;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        i++;
-    }
-    return 1;
+	int fb, fb2, fb3;
+	int i, j, k, size, position = 0;
+	for (i = 0; i < 10; i++) {
+		//check to see if current block is allocated already
+		if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {        
+			//current block is not allocated, find free block and assign it to current index
+			fb = find_free_block();
+			ASSIGN_LOCATION(inode, i, fb);
+		}
+		if (i < 8) {
+			//if it is a direct block, then can comense write
+			if ((size = new_size - position) > 256)
+				size = 256;
+			WRITE_TO_LOCATION(inode, i, (ist + position), size);
+            position += size;				
+			//check to see whether or not this is last block
+			if ((new_size - position) <= 256)
+				return 1;
+		}
+		else {
+			for (j = 0; j < BLOCK_SIZE/4; j++) {
+				//check to see if first indirection is allocated
+				if (GET_INODE_LOCATION_BLOCK_GENERIC_FST(inode, i, j) == 0) {
+					//if not, find free block and assign
+					fb2 = find_free_block();
+					ASSIGN_LOCATION_GENERIC_RED(inode, i, j, fb2);
+				}
+				if (i == 8) {
+					if ((size = new_size - position) > 256)
+						size = 256;
+					//begin write to 1st indirection block
+					WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), size);
+                    position += size;
+					//check to see whether or not this is last block
+					if ((new_size - position) <= 256)
+						return 1;
+				}
+				else if(i == 9) {
+					for (k = 0; k < BLOCK_SIZE/4; k++) {
+						if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
+							fb3 = find_free_block();
+							ASSIGN_LOCATION_DOUBLE_SND_RED(inode, j, k, fb3);
+						}
+						if ((size = new_size - position) > 256)
+							size = 256;
+                        WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), size);
+                        position += size;
+						//check to see whether or not this is last block
+						if ((new_size - position) <= 256)
+							return 1;				
+					}					
+				}
+			}
+		}
+	}
+	//unable to fill all the data
+	return -1;
 }
 
 int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
@@ -1118,6 +995,7 @@ int kwrite(int fd, char *address, int num_bytes) {
         unsigned char *temp = (unsigned char *)malloc(sizeof(num_bytes));
         memcpy(temp, address, num_bytes);
         int ret = write_file(fd, fd_table[fd]->write_pos, num_bytes, temp);
+		free(temp);
         if (ret == -1) {
             return -1;
         }

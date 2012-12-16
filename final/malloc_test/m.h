@@ -61,6 +61,7 @@ int kreaddir(int fd, char *address);
 #define SET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(INODE, PTR_ENT1, PTR_ENT2, ENT, FILENAME); {memcpy(((*(*(*rd->ib[INODE].blocks[8]).ptr.blocks[PTR_ENT1]).ptr.blocks[PTR_ENT2]).dir.ent[ENT].filename), FILENAME, 13);}
 #define PRINT_INODE_FROM_INODE_LOCATION_DOB(INODE, PTR_ENT1, PTR_ENT2, ENT); {printf("Filename = %s, Inode = %d\n", GET_INODE_FROM_INODE_LOCATION_DOB_FILENAME(INODE, PTR_ENT1, PTR_ENT2, ENT), GET_INODE_FROM_INODE_LOCATION_DOB_INODE(INODE, PTR_ENT1, PTR_ENT2, ENT));}
 
+#define GET_INODE_LOCATION_BLOCK_GENERIC_FST(INODE, BLOCK, PTR_ENT) ((*rd->ib[INODE].blocks[BLOCK]).ptr.blocks[PTR_ENT]) 
 /** General methods */
 // Create 1 on bit y (all others 0)
 #define BIT_MASK_1(y) ((0x01 << (7-y)))
@@ -108,6 +109,7 @@ int kreaddir(int fd, char *address);
 #define GET_FROM_LOCATION_DOUBLE_RED(INODE, PTR_ENTRY1, PTR_ENTRY2) (*(*(*rd->ib[INODE].blocks[9]).ptr.blocks[PTR_ENTRY1]).ptr.blocks[PTR_ENTRY2]).reg.byte
 #define WRITE_TO_LOCATION_DOUBLE_RED(INODE, PTR_ENTRY1, PTR_ENTRY2, FILE, BYTES); {memcpy(GET_FROM_LOCATION_DOUBLE_RED(INODE, PTR_ENTRY1, PTR_ENTRY2), FILE, BYTES);}
 
+#define ASSIGN_LOCATION_GENERIC_RED(INODE, BLOCK1, PTR_ENTRY, BLOCK2); {rd->ib[INODE].blocks[BLOCK1]->ptr.blocks[PTR_ENTRY] = &rd->pb[BLOCK2];}
 // Copy only 13, leave 14th for Null.
 #define SET_DIR_ENTRY_NAME(BLOCK, ENTRY, NAME); {memcpy(rd->pb[BLOCK].dir.ent[ENTRY].filename, NAME, 13);}
 #define SET_DIR_ENTRY_INODE(BLOCK, ENTRY, INODE); {rd->pb[BLOCK].dir.ent[ENTRY].inode_number = INODE; }
