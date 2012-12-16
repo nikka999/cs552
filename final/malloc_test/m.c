@@ -64,7 +64,7 @@ int get_inode_index (int node, char *pathname) {
 			bd = blk->dir;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-                    printf("checkpath name=%s, %d\n", pathname, j);
+                    printf("checkpath name=%s, %s\n", pathname, bd.ent[j].filename);
 					if(!strcmp(bd.ent[j].filename, pathname)) {
                         printf("checkpath name=%s, %d\n", pathname, j);
 						return bd.ent[j].inode_number;
@@ -72,7 +72,9 @@ int get_inode_index (int node, char *pathname) {
 				} 				
 			}
 			else {
+                printf("checkpath nameeeeee=%s\n", pathname);
 				for (j = 0; j < BLOCK_SIZE/4; j++) {
+                    printf("checkpath name=%s, %d\n", pathname, j);
 					dblk = blk->ptr.blocks[j];
 					bd = dblk->dir;					
 					for (z = 0; z < 16; z++) {
