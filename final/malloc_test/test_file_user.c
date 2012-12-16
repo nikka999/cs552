@@ -25,8 +25,8 @@
 //#define TEST1
 //#define TEST2
 //#define TEST3
-//#define TEST4
-#define TEST5
+#define TEST4
+//#define TEST5
 
 // #define's to control whether single indirect or
 // double indirect block pointers are tested
@@ -306,12 +306,14 @@ int main () {
       
       exit (1);
     }
+      /*
       printf("user\n");
       int zz = 0;
       for (zz; zz < 16; zz++) {
           printf("%d ", *((unsigned char *)addr + zz));
       }
       printf("\n");
+       */
     index_node_number = atoi(&addr[14]);
     printf ("Contents at addr: [%s,%d]\n", addr, index_node_number);
   }
