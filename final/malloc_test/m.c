@@ -78,10 +78,9 @@ int get_inode_index (int node, char *pathname) {
 				for (j = 0; j < BLOCK_SIZE/4; j++) {
 					dblk = blk->ptr.blocks[j];
 					if (dblk != 0)
-						bd = blk->dir;
+						bd = dblk->dir;
 					else
 						continue;
-					bd = dblk->dir;					
 					for (z = 0; z < 16; z++) {
 						if(!strcmp(bd.ent[z].filename, pathname)) {
 							return bd.ent[z].inode_number;
@@ -180,7 +179,10 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 			continue;
 		for (k = 0; k < BLOCK_SIZE/4; k++) {
 			blk = bp.blocks[k];
-			bd = blk->dir;
+			if (blk != 0)
+				bd = blk->dir;
+			else
+				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
 					if(bd.ent[j].inode_number == tnode) {
@@ -199,7 +201,10 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 			else {
 				for (j = 0; j < BLOCK_SIZE/4; j++) {
 					dblk = blk->ptr.blocks[j];
-					bd = dblk->dir;					
+					if (dblk != 0)
+						bd = dblk->dir;
+					else
+						continue;					
 					for (z = 0; z < 16; z++) {
 						if(bd.ent[z].inode_number == tnode) {
 							return 1;
