@@ -1022,15 +1022,19 @@ int kreaddir(int fd, char *address) {
 
 int main() {
     init_fs();
-    unsigned char *partition_block_location = (&rd->bb.byte);
-    printf("Partition block starting point: %d\n", *(char *)partition_block_location);
-    
+    unsigned char *partition_block_location = (rd->bb.byte);
+    // printf("Partition block starting point: %d\n", *(char *)partition_block_location);
+    // 
     int zz = 0;
-    for (zz; zz < 256; zz++) {
-        printf("%d ", *((char *)partition_block_location + zz));
-    }
+    // for (zz; zz < 256; zz++) {
+    //     printf("%d ", *((char *)partition_block_location + zz));
+    // }
+
+	unsigned int st = (unsigned int)rd->pb;
+	printf("this is the pointer: %p\n", rd->pb);
+	printf ("this is the pb starting address: %u\n", st);
     
-    printf("\n");
+    // printf("\n");
     
     /**
     // Test write from inode
