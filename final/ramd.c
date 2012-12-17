@@ -499,7 +499,7 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                         // Insert inode into this location
                         SET_INODE_FROM_INODE_LOCATION_INODE(super_inode, i, j, new_inode);
                         SET_INODE_FROM_INODE_LOCATION_FILENAME(super_inode, i, j, filename);
-                        PRINT_INODE_FROM_INODE_LOCATION(super_inode, i, j);
+                        // PRINT_INODE_FROM_INODE_LOCATION(super_inode, i, j);
                         return 1;
                     }
                 }
@@ -525,7 +525,7 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
                             if (GET_INODE_FROM_INODE_LOCATION_SIN_INODE(super_inode, j, k) == 0) {
                             SET_INODE_FROM_INODE_LOCATION_SIN_INODE(super_inode, j, k, new_inode);
                             SET_INODE_FROM_INODE_LOCATION_SIN_FILENAME(super_inode, j, k, filename);
-                            PRINT_INODE_FROM_INODE_LOCATION_SIN(super_inode, j, k);
+                            // PRINT_INODE_FROM_INODE_LOCATION_SIN(super_inode, j, k);
                             return 1;
                             }
                         }
@@ -587,8 +587,8 @@ int insert_inode(short super_inode, short new_inode, char *filename) {
 }
 
 int kcreat(char *pathname) {
-    PRINT_FREEINODE_COUNT;
-    PRINT_FREEBLOCK_COUNT;
+   	// PRINT_FREEINODE_COUNT;
+    // PRINT_FREEBLOCK_COUNT;
     // kernel creat. Create a file
     int fi = find_free_inode();
     if (fi < 0) {
@@ -1114,8 +1114,8 @@ int kunlink(char *pathname) {
 			recursive_pathname_size_decr(pathname, reg_size);
 			INCR_FREEINODE;
             // 4. Traverse filesystem and minus file_size on all super inodes.
-            PRINT_FREEINODE_COUNT;
-            PRINT_FREEBLOCK_COUNT;
+            // PRINT_FREEINODE_COUNT;
+            // PRINT_FREEBLOCK_COUNT;
 			kfree(last);
             return 0;
         }
