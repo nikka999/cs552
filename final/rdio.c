@@ -14,7 +14,7 @@ int rd_mkdir(char *pathname) {
 	int fd = open("/proc/ramdisk", O_RDONLY);
 	int rc = ioctl(fd, RD_MKDIR, pathname);
 	close(fd);
-	return rc;	
+	return rc;
 }
 
 int rd_open(char *pathname) {

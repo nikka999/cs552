@@ -622,9 +622,11 @@ int kmkdir(char *pathname) {
 	short super_inode;    
     // kernel mkdir. Create a DIR
     int fi = find_free_inode();
+    printk("<1>Kmkdir Free inode = %d\n", fi);
     if (fi == -1) {
         return -1;
     }
+    printf("<1>Kmkdir pathname = %s\n", pathname);
 
     
     // Check_pathname and get last entry
@@ -632,6 +634,7 @@ int kmkdir(char *pathname) {
 
     if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
+        printf("<1> kmkdir pathname: %s, already exists\n", pathname);
 		kfree(last);
         return -1;
     }    
