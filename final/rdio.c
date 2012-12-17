@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <stdlib.h>
 #include "rdio.h"
 
 int rd_creat(char *pathname) {

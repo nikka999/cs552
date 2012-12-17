@@ -1263,11 +1263,11 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	 * Switch according to the ioctl called 
 	 */
 	switch (cmd) {
-		case RD_MALLOC:
+//		case RD_MALLOC:
 			// vmalloc for 2MB
 		//	ramdisk = (unsigned char *)vmalloc(2097150);
-			printk("<1>I finished vmalloc!\n");
-			break;
+//			printk("<1>I finished vmalloc!\n");
+//			break;
 		case RD_CREAT:
 			size = strnlen_user((char *)arg, 50);
 			pathname = (char *)kmalloc(size,GFP_KERNEL);
