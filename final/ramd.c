@@ -34,6 +34,7 @@ struct Params {
 int init_fs(void) {
     // INIT FILESYSTEM:
     rd = (struct Ramdisk *)vmalloc(sizeof(struct Ramdisk));
+	memset(rd, 0, sizeof(struct Ramdisk));
     printk("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
     // Setting up root
     SET_INODE_TYPE_DIR(0);
@@ -72,9 +73,11 @@ int get_inode_index (int node, char *pathname) {
 		if (inode->blocks[i] != 0){
 			//bd = inode->blocks[i]->dir;
 			for (k = 0; k < 16; k++) {
-				printk("<1> about to compare: %p, and %p", &(inode->blocks[i]->dir.ent[k].filename), pathname);
-				if(!strncmp(&(inode->blocks[i]->dir.ent[k].filename), pathname, 14))
-					return inode->blocks[i]->dir.ent[k].inode_number;
+				if (inode->blocks[i]->reg.byte != 0) {
+					printk("<1> about to compare: %p, and %p", (inode->blocks[i]->dir.ent[k].filename), pathname);
+					if(!strncmp((inode->blocks[i]->dir.ent[k].filename), pathname, 14))
+						return inode->blocks[i]->dir.ent[k].inode_number;	
+				}
 			}
 		}
 	}
