@@ -1285,7 +1285,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			size = strnlen_user((char *)arg, 50);
 			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
-			// rc = kcreat(pathname);
+			rc = kcreat(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
@@ -1296,7 +1296,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			size = strnlen_user((char *)arg, 50);
 			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
-			// rc = kmkdir(pathname);
+			rc = kmkdir(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
@@ -1307,7 +1307,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			size = strnlen_user((char *)arg, 50);
 			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
-			// rc = kopen(pathname);
+			rc = kopen(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
@@ -1316,7 +1316,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		case RD_CLOSE:
 			get_user(fd, (int *)arg);
-			// rc = kclose(fd);
+			rc = kclose(fd);
 			printk("<1> kernel: the fd is %d\n", fd);
 			return rc;
 			break;
