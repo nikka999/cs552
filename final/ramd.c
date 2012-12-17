@@ -45,6 +45,7 @@ int init_fs(void) {
     INIT_FREEBLOCK;
     DECR_FREEINODE; // -1 for ROOT
     // EOF init
+	return 0;
 }
 
 int is_block_empty(union Block *blk) {
@@ -1084,7 +1085,6 @@ int kunlink(char *pathname) {
         return -1;
     }
     last = (char *)kmalloc(14, GFP_KERNEL);
-    super_inode;
     retp = check_pathname(pathname, last, &super_inode);
     if (retp == 0 || retp == -1) {
         // does not exist file or error
@@ -1134,6 +1134,7 @@ int kunlink(char *pathname) {
             return 0;
         }
     }
+	return -1;
 }
 
 int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
@@ -1179,6 +1180,7 @@ int small_itoa(struct Dir_entry *temp_add) {
     // 48 = ascii '0'
     *((unsigned char *)temp_add + 14) = (48 + ten);
     *((unsigned char *)temp_add + 15) = (48 + dig);
+	return 0;
 }
 
 #define USING_ATOI
