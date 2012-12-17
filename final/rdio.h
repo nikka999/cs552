@@ -1,6 +1,5 @@
 #define MAJOR_NUM 155
 
-// #define RD_MALLOC _IOR(MAJOR_NUM, 0, int)
 #define RD_CREAT _IOR(MAJOR_NUM, 0, char *)
 #define RD_MKDIR _IOR(MAJOR_NUM, 1, char *)
 #define RD_OPEN _IOR(MAJOR_NUM, 2, char *)
