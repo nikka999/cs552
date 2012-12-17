@@ -1288,7 +1288,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
-			kfree(pathname);
+			// kfree(pathname);
 			return rc;
 			break;
 		case RD_MKDIR:
@@ -1299,7 +1299,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
-			kfree(pathname);
+			// kfree(pathname);
 			return rc;
 			break;
 		case RD_OPEN:
@@ -1310,7 +1310,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
-			kfree(pathname);
+			// kfree(pathname);
 			return rc;
 			break;
 		case RD_CLOSE:
@@ -1351,7 +1351,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);			
-			kfree(pathname);
+			// kfree(pathname);
 			return rc;
 			break;
 		case RD_READDIR:
