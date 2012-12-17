@@ -1290,7 +1290,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	int fd, rc = 0;
 	// int size;
 	unsigned int size;
-	char *pathname;
+	char *pathname ;
 	char *addr;
 	struct Params p;
 	// pathname = (char *)kmalloc(50, GFP_KERNEL);
@@ -1341,7 +1341,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
 			addr = (char *)kmalloc(p.num_bytes, GFP_KERNEL);
-			// rc = kread(p.fd, addr, p.num_bytes);
+			rc = kread(p.fd, addr, p.num_bytes);
 			copy_to_user(p.addr, addr, p.num_bytes);
 			kfree(addr);
 			return rc;
@@ -1350,7 +1350,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
 			addr = (char *)kmalloc(p.num_bytes, GFP_KERNEL);			
-			// rc = kwrite(p.fd, addr, p.num_bytes);
+			rc = kwrite(p.fd, addr, p.num_bytes);
 			copy_to_user(p.addr, addr, p.num_bytes);
 			kfree(addr);
 			return rc;
@@ -1363,7 +1363,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		case RD_UNLINK:
 			size = strnlen_user((char *)arg, 50);
-			// pathname = (char *)kmalloc(size,GFP_KERNEL);
+			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
 			// rc = kunlink(pathname);
 			printk("<1> kernel got: %s\n",pathname);
