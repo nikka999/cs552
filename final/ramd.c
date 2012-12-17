@@ -66,7 +66,7 @@ int get_inode_index (int node, char *pathname) {
 	struct Block_ptr *bp;
 	union Block *blk, *dblk;
 	inode = &(GET_INODE_BY_INDEX(node));
-	if (!strcmp(inode->type, reg))
+	if (!memcmp(inode->type, reg, 3))
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0)
@@ -176,7 +176,7 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 	struct Block_ptr *bp;
 	union Block *blk, *dblk;
 	inode = &(GET_INODE_BY_INDEX(cnode));
-	if (!strcmp(inode->type, reg))
+	if (!memcmp(inode->type, reg, 3))
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0)
@@ -286,7 +286,7 @@ int delete_dir_entry(short node, char *pathname) {
 	struct Block_ptr *bp;
 	union Block *blk, *dblk;
 	inode = &(GET_INODE_BY_INDEX(node));
-	if (!strcmp(inode->type, reg))
+	if (!memcmp(inode->type, reg, 0))
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0)
