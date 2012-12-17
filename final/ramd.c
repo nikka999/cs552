@@ -72,8 +72,8 @@ int get_inode_index (int node, char *pathname) {
 		if (inode->blocks[i] != 0){
 			//bd = inode->blocks[i]->dir;
 			for (k = 0; k < 16; k++) {
-				printk("<1> about to compare: %p, and %p", inode->blocks[i]->dir.ent[k].filename, pathname);
-				if(!strncmp(inode->blocks[i]->dir.ent[k].filename, pathname, 14))
+				printk("<1> about to compare: %p, and %p", &(inode->blocks[i]->dir.ent[k].filename), pathname);
+				if(!strncmp(&(inode->blocks[i]->dir.ent[k].filename), pathname, 14))
 					return inode->blocks[i]->dir.ent[k].inode_number;
 			}
 		}
