@@ -61,16 +61,16 @@ int is_block_empty(union Block *blk) {
 //searches a parent directory for a file's inode, return -1 if not found
 int get_inode_index (int node, char *pathname) {
 	int i,k,j,z;
-	struct Inode inode;
+	struct Inode *inode;
 	struct Block_dir bd;
 	struct Block_ptr bp;
 	union Block *blk, *dblk;
-	inode = GET_INODE_BY_INDEX(node);
-	if (!strcmp(inode.type, "reg"))
+	*inode = GET_INODE_BY_INDEX(node);
+	if (!strcmp(inode->type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
-		if (inode.blocks[i] != 0)
-			bd = inode.blocks[i]->dir;
+		if (inode->blocks[i] != 0)
+			bd = inode->blocks[i]->dir;
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
@@ -79,8 +79,8 @@ int get_inode_index (int node, char *pathname) {
 		}
 	}
 	for (i = 8; i < 10; i++) {
-		if (inode.blocks[i] != 0)
-			bp = inode.blocks[i]->ptr;
+		if (inode->blocks[i] != 0)
+			bp = inode->blocks[i]->ptr;
 		else
 			continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {
@@ -168,16 +168,16 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 //recursive search
 int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 	int i,k,j,z; 
-	struct Inode inode;
+	struct Inode *inode;
 	struct Block_dir bd;
 	struct Block_ptr bp;
 	union Block *blk, *dblk;
-	inode = GET_INODE_BY_INDEX(cnode);
-	if (!strcmp(inode.type, "reg"))
+	*inode = GET_INODE_BY_INDEX(cnode);
+	if (!strcmp(inode->type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
-		if (inode.blocks[i] != 0)
-			bd = inode.blocks[i]->dir;
+		if (inode->blocks[i] != 0)
+			bd = inode->blocks[i]->dir;
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
@@ -195,8 +195,8 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 		}
 	}
 	for (i = 8; i < 10; i++) {
-		if (inode.blocks[i] != 0)
-			bp = inode.blocks[i]->ptr;
+		if (inode->blocks[i] != 0)
+			bp = inode->blocks[i]->ptr;
 		else
 			continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {

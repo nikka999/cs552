@@ -26,7 +26,7 @@ int kreaddir(int fd, char *address);
 
 /** Inode block */
 #define INODEBLOCK_NUMBER 256
-#define INODEBLOCK_SIZE (BLOCK_SIZE * INODEBLOCK_NUMBER)
+#define INODEBLOCK_SIZE (BLOCK_BYTES * INODEBLOCK_NUMBER)
 #define INODE_SIZE 64
 #define INODE_NUMBER (INODEBLOCK_SIZE/INODE_SIZE)
 
@@ -86,7 +86,7 @@ int kreaddir(int fd, char *address);
 
 /** Partition */
 #define PARTITION_SIZE (RAMDISK_SIZE-(256*(1+256+4)))
-#define PARTITION_NUMBER (PARTITION_SIZE/BLOCK_SIZE)
+#define PARTITION_NUMBER (PARTITION_SIZE/BLOCK_BYTES)
 // Partition Methods
 // Write to file block/and get from. (NO REDIRECTION)
 #define WRITE_TO_FILE(BLOCK, BYTES); {memcpy(rd->pb[BLOCK].reg.byte, BYTES, 256);}
@@ -161,7 +161,7 @@ struct Block_dir {
 
 struct Block_ptr {
     // Block of pointers, for large file. 4=ptr size;
-    union Block *blocks[BLOCK_SIZE/4];
+    union Block *blocks[BLOCK_BYTES/4];
 };
 
 
