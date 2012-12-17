@@ -63,15 +63,12 @@ int is_block_empty(union Block *blk) {
 int get_inode_index (int node, char *pathname) {
 	int i,k,j,z;
 	struct Inode *inode;
-	// struct Block_dir bd;
-	// struct Block_ptr bp;
 	union Block *blk, *dblk;
 	inode = &(GET_INODE_BY_INDEX(node));
 	if (!memcmp(inode->type, reg, 3))
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0){
-			//bd = inode->blocks[i]->dir;
 			for (k = 0; k < 16; k++) {
 				if (inode->blocks[i]->reg.byte != 0) {
 					printk("<1> about to compare: %p, and %p", (inode->blocks[i]->dir.ent[k].filename), pathname);
@@ -100,8 +97,10 @@ int get_inode_index (int node, char *pathname) {
 			// 	continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-					if(!strncmp(blk->dir.ent[j].filename, pathname, 14)) {
-						return blk->dir.ent[j].inode_number;
+					if (blk->reg.byte !=0) {
+						if(!strncmp(blk->dir.ent[j].filename, pathname, 14)) {
+							return blk->dir.ent[j].inode_number;
+						}	
 					}
 				} 				
 			}
@@ -111,12 +110,11 @@ int get_inode_index (int node, char *pathname) {
 					if (dblk != 0) {
 						continue;
 					}
-						// bd = dblk->dir;
-					// else
-					// 	continue;
 					for (z = 0; z < 16; z++) {
-						if(!strncmp(dblk->dir.ent[z].filename, pathname, 14)) {
-							return dblk->dir.ent[z].inode_number;
+						if (dblk->reg.byte != 0) {
+							if(!strncmp(dblk->dir.ent[z].filename, pathname, 14)) {
+								return dblk->dir.ent[z].inode_number;
+							}							
 						}
 					}
 				}
