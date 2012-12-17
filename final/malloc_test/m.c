@@ -241,7 +241,6 @@ int parent_inode_index_trace(short inode, short *trace) {
 	found = recursive_inode_search(fotrace, &size, 0, inode);
 	if (!found)
 		return -1; //fieldname not found
-	// trace = (short *)calloc(size, sizeof(short));
 	memcpy(trace, fotrace, size * sizeof(short));
 	return size;
 }
