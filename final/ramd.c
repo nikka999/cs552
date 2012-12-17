@@ -253,7 +253,7 @@ int parent_inode_index_trace(short inode, short *trace) {
 	int size = 1, found = 0;
 	//allocate minimum space for array
 	//root inode will always be 0
-	short fotrace[1024];
+	short fotrace[512];
 	fotrace[0] = 0;
 	found = recursive_inode_search(fotrace, &size, 0, inode);
 	if (!found)
@@ -263,7 +263,7 @@ int parent_inode_index_trace(short inode, short *trace) {
 }
 
 int recursive_inode_size_add(short inode, int size) {
-	short parent_array[1024];
+	short parent_array[512];
 	int array_size, i, t;
 	array_size = parent_inode_index_trace(inode, parent_array);
 	if (array_size < 0)
