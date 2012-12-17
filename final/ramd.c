@@ -1360,25 +1360,25 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		case RD_LSEEK:
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.byte_size:%d\n", p.fd, p.num_bytes);
-			rc = klseek(p.fd, p.num_bytes);
+			// rc = klseek(p.fd, p.num_bytes);
 			return rc;
 			break;
 		case RD_UNLINK:
 			size = strnlen_user((char *)arg, 50);
 			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
-			rc = kunlink(pathname);
+			// rc = kunlink(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);			
-			kfree(pathname);
+			// kfree(pathname);
 			return rc;
 			break;
 		case RD_READDIR:
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p\n", p.fd, p.addr);
 			addr = (char *)kmalloc(256, GFP_KERNEL);
-			rc = kreaddir(p.fd, addr);
+			// rc = kreaddir(p.fd, addr);
 			copy_to_user(p.addr, addr, strlen(addr)+1); 
 			kfree(addr);
 			return 0;
