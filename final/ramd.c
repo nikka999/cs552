@@ -125,7 +125,8 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	int node_index = 0;
 	int current_index;
 	// unsigned int dir = 0;
-	name = (char *)kzalloc(14, GFP_KERNEL);
+	// name = (char *)kzalloc(14, GFP_KERNEL);
+	name = (char *)vmalloc(14);
 	printk("<1> in check_pathname...");
     //validate that user inputed root
 	if (pathname[0] != '/')
@@ -601,7 +602,7 @@ int kcreat(char *pathname) {
         return -1;
     }
     // Check pathname and get last entry.
-	last = (char *)vmalloc(14, GFP_KERNEL);
+	last = (char *)vmalloc(14);
     if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
  		vfree(last);
@@ -636,7 +637,7 @@ int kmkdir(char *pathname) {
 
     
     // Check_pathname and get last entry
-    last = (char *)vmalloc(14, GFP_KERNEL);
+    last = (char *)vmalloc(14);
 	printk("<1> in kmkdir still alive!!!!!!");
     if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
@@ -726,7 +727,7 @@ int build_inode_structure(short inode, unsigned char *ist) {
 
 int kopen(char *pathname) {
     // Check_pathname and get last entry
-    char *last = (char *)vmalloc(14, GFP_KERNEL);
+    char *last = (char *)vmalloc(14);
     short super_inode;
 	int inode;
     if ((inode = check_pathname(pathname, last, &super_inode)) < 1) {
@@ -740,7 +741,7 @@ int kopen(char *pathname) {
     // 2. Check if fd_table is active. 
     if (fd_table[inode] == NULL) {
         struct fd* newfd;
-        newfd = (struct fd *)vmalloc(sizeof(struct fd), GFP_KERNEL);
+        newfd = (struct fd *)vmalloc(sizeof(struct fd));
         newfd->inode = &rd->ib[inode];
         fd_table[inode] = newfd;
 		vfree(newfd);
@@ -768,7 +769,7 @@ int kclose(int fd) {
 
 int read_file(short inode, int read_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
-    unsigned char *ist = (unsigned char *)vmalloc(MAX_FILE_SIZE, GFP_KERNEL);
+    unsigned char *ist = (unsigned char *)vmalloc(MAX_FILE_SIZE);
     int size = build_inode_structure(inode, ist);
     if (size == 0) {
         return 0;
@@ -809,7 +810,7 @@ int kread(int fd, char *address, int num_bytes) {
     if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
         // Read num_bytes TO ADDRESS location
         second_redir = 8*256;
-        temp = (unsigned char *)vmalloc(second_redir, GFP_KERNEL);
+        temp = (unsigned char *)vmalloc(second_redir);
         pos = 0;
         ret = 0;
         while (pos < num_bytes) {
@@ -924,7 +925,7 @@ int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
 	int size;
 	unsigned char *ist;
- 	ist = (unsigned char *)vmalloc(MAX_FILE_SIZE, GFP_KERNEL);
+ 	ist = (unsigned char *)vmalloc(MAX_FILE_SIZE);
     size = build_inode_structure(inode, ist);
     if ((write_pos + num_bytes) > MAX_FILE_SIZE) {
         // Not enough bytes for us to write, write what is possible.
@@ -968,7 +969,7 @@ int kwrite(int fd, char *address, int num_bytes) {
         // write num_bytes From ADDRESS location
         // COPY FROM USERSPACE
         second_redir = 256*8;
-        temp = (unsigned char *)vmalloc(second_redir, GFP_KERNEL);
+        temp = (unsigned char *)vmalloc(second_redir);
         pos = 0;
         ret = 0;
         while (pos < num_bytes) {
@@ -1095,7 +1096,7 @@ int kunlink(char *pathname) {
         // trying to unlink root
         return -1;
     }
-    last = (char *)vmalloc(14, GFP_KERNEL);
+    last = (char *)vmalloc(14);
     retp = check_pathname(pathname, last, &super_inode);
     if (retp == 0 || retp == -1) {
         // does not exist file or error
@@ -1151,7 +1152,7 @@ int kunlink(char *pathname) {
 int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     // Read 1 dir_entry
     // Build the inode structure first.
-    unsigned char *ist = (unsigned char *)vmalloc(MAX_FILE_SIZE, GFP_KERNEL);
+    unsigned char *ist = (unsigned char *)vmalloc(MAX_FILE_SIZE);
     int size = build_inode_structure(inode, ist);    
     if (size == 0) {
         return 0;
@@ -1163,7 +1164,7 @@ int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     }
     while ((read_pos + 16) <= size) {
         // Read an entry
-        struct Dir_entry *d = (struct Dir_entry *)vmalloc(sizeof(struct Dir_entry), GFP_KERNEL);
+        struct Dir_entry *d = (struct Dir_entry *)vmalloc(sizeof(struct Dir_entry));
         memcpy(d, ist + read_pos, 16);
         if (d->inode_number == 0) {
             // An empty Dir_entry
@@ -1205,7 +1206,7 @@ int kreaddir(int fd, char *address) {
     // Check if it is a DIR file
     if (memcmp(dir, GET_INODE_TYPE(fd), 3) == 0) {
         // read 1 dir_entry from fd
-        struct Dir_entry *temp_add = (struct Dir_entry *)vmalloc(sizeof(struct Dir_entry), GFP_KERNEL);
+        struct Dir_entry *temp_add = (struct Dir_entry *)vmalloc(sizeof(struct Dir_entry));
         int ret = read_dir_entry(fd, fd_table[fd]->read_pos, temp_add);
         if (ret == -1) {
             return -1;
@@ -1291,7 +1292,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	switch (cmd) {
 		case RD_CREAT:
 			size = strnlen_user((char *)arg, 50);
-			pathname = (char *)vmalloc(size,GFP_KERNEL);
+			pathname = (char *)vmalloc(size);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kcreat(pathname);
 			printk("<1> kernel got: %s\n",pathname);
@@ -1302,7 +1303,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		case RD_MKDIR:
 			size = strnlen_user((char *)arg, 50);
-			pathname = (char *)vmalloc(size,GFP_KERNEL);
+			pathname = (char *)vmalloc(size);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kmkdir(pathname);
 			printk("<1> kernel got: %s\n",pathname);
@@ -1313,7 +1314,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		case RD_OPEN:
 			size = strnlen_user((char *)arg, 50);
-			pathname = (char *)vmalloc(size,GFP_KERNEL);
+			pathname = (char *)vmalloc(size);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kopen(pathname);
 			printk("<1> kernel got: %s\n",pathname);
@@ -1331,7 +1332,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		case RD_READ:
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
-			addr = (char *)vmalloc(p.num_bytes, GFP_KERNEL);
+			addr = (char *)vmalloc(p.num_bytes);
 			// rc = kread(p.fd, addr, p.num_bytes);
 			copy_to_user(p.addr, addr, p.num_bytes);
 			vfree(addr);
@@ -1340,7 +1341,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		case RD_WRITE:
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
-			addr = (char *)vmalloc(p.num_bytes, GFP_KERNEL);			
+			addr = (char *)vmalloc(p.num_bytes);			
 			// rc = kwrite(p.fd, addr, p.num_bytes);
 			copy_to_user(p.addr, addr, p.num_bytes);
 			vfree(addr);
@@ -1366,7 +1367,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		case RD_READDIR:
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p\n", p.fd, p.addr);
-			addr = (char *)vmalloc(256, GFP_KERNEL);
+			addr = (char *)vmalloc(256);
 			// rc = kreaddir(p.fd, addr);
 			copy_to_user(p.addr, addr, strlen(addr)+1); 
 			vfree(addr);
