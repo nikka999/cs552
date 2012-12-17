@@ -31,7 +31,7 @@ struct Params {
 	int num_bytes;
 };
 
-int init_fs() {
+int init_fs(void) {
     // INIT FILESYSTEM:
     rd = (struct Ramdisk *)vmalloc(sizeof(struct Ramdisk));
     printk("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
@@ -249,7 +249,7 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 
 //exhaustive search to find
 int parent_inode_index_trace(short inode, short *trace) {
-	int size = 1, node = 0, found = 0;
+	int size = 1, found = 0;
 	//allocate minimum space for array
 	//root inode will always be 0
 	short fotrace[1024];
