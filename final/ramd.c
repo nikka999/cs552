@@ -944,7 +944,7 @@ int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
 }
 
 int kwrite(int fd, char *address, int num_bytes) {
-	int ret, ret2, post, second_redir;
+	int ret, ret2, pos, second_redir;
 	unsigned char *temp;
     // Again, fd=inode index
     if (fd_table[fd] == NULL) {
