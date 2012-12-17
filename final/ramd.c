@@ -126,6 +126,7 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	int current_index;
 	// unsigned int dir = 0;
 	memset(name, 0, 14);
+	printk("<1> in check_pathname...");
     //validate that user inputed root
 	if (pathname[0] != '/')
 		return -1;
@@ -159,6 +160,7 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	//set last as the final file name
 	strncpy(last, name, 14);
 	*super_inode = node_index;
+	printk("<1>still in check_pathname...");
 	//if returns something other than -1, it means that this pathname already exits
 	if (current_index > 0)
 		return current_index;
@@ -622,6 +624,7 @@ int kmkdir(char *pathname) {
 	char *last;
 	short super_inode;    
     // kernel mkdir. Create a DIR
+	printk("<1> in kmkdir, with pathname: %s\n", pathname);
     int fi = find_free_inode();
     if (fi == -1) {
         return -1;
@@ -630,7 +633,7 @@ int kmkdir(char *pathname) {
     
     // Check_pathname and get last entry
     last = (char *)kmalloc(14, GFP_KERNEL);
-
+	printk("<1> in kmkdir still alive!!!!!!");
     if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
 		kfree(last);
