@@ -1274,6 +1274,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	// int size;
 	unsigned long size;
 	char pathname[50];
+	memset(pathname, 0, 50);
 	char *addr;
 	struct Params p;
 	/* 
@@ -1287,6 +1288,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			rc = kcreat(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %lu\n", size);
+			memset(pathname, 0, 50);
 			// kfree(pathname);
 			return rc;
 			break;
@@ -1297,6 +1299,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			rc = kmkdir(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %lu\n", size);
+			memset(pathname, 0, 50);
 			// kfree(pathname);
 			return rc;
 			break;
@@ -1307,6 +1310,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			rc = kopen(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %lu\n", size);
+			memset(pathname, 0, 50);
 			// kfree(pathname);
 			return rc;
 			break;
@@ -1347,6 +1351,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			rc = kunlink(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %lu\n", size);
+			memset(pathname, 0, 50);			
 			// kfree(pathname);
 			return rc;
 			break;
