@@ -65,7 +65,7 @@ int get_inode_index (int node, char *pathname) {
 	struct Block_dir bd;
 	struct Block_ptr bp;
 	union Block *blk, *dblk;
-	*inode = GET_INODE_BY_INDEX(node);
+	inode = &(GET_INODE_BY_INDEX(node));
 	if (!strcmp(inode->type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
@@ -172,7 +172,7 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 	struct Block_dir bd;
 	struct Block_ptr bp;
 	union Block *blk, *dblk;
-	*inode = GET_INODE_BY_INDEX(cnode);
+	inode = &(GET_INODE_BY_INDEX(cnode));
 	if (!strcmp(inode->type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
