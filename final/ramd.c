@@ -1271,44 +1271,44 @@ static void __exit exit_routine(void) {
 static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
 	int fd, rc;
 	// int size;
-	unsigned long size;
+	unsigned int size;
 	char *pathname;
 	char *addr;
 	struct Params p;
-	pathname = (char *)kmalloc(50, GFP_KERNEL);
+	// pathname = (char *)kmalloc(50, GFP_KERNEL);
 	/* 
 	 * Switch according to the ioctl called 
 	 */
 	switch (cmd) {
 		case RD_CREAT:
 			size = strnlen_user((char *)arg, 50);
-			// pathname = (char *)kmalloc(size,GFP_KERNEL);
+			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kcreat(pathname);
 			printk("<1> kernel got: %s\n",pathname);
-			printk("<1> the len is %lu\n", size);
+			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
 			kfree(pathname);
 			return rc;
 			break;
 		case RD_MKDIR:
 			size = strnlen_user((char *)arg, 50);
-			// pathname = (char *)kmalloc(size,GFP_KERNEL);
+			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kmkdir(pathname);
 			printk("<1> kernel got: %s\n",pathname);
-			printk("<1> the len is %lu\n", size);
+			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
 			kfree(pathname);
 			return rc;
 			break;
 		case RD_OPEN:
 			size = strnlen_user((char *)arg, 50);
-			// pathname = (char *)kmalloc(size,GFP_KERNEL);
+			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kopen(pathname);
 			printk("<1> kernel got: %s\n",pathname);
-			printk("<1> the len is %lu\n", size);
+			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);
 			kfree(pathname);
 			return rc;
@@ -1345,13 +1345,13 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		case RD_UNLINK:
 			size = strnlen_user((char *)arg, 50);
-			// pathname = (char *)kmalloc(size,GFP_KERNEL);
+			pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kunlink(pathname);
 			printk("<1> kernel got: %s\n",pathname);
-			printk("<1> the len is %lu\n", size);
+			printk("<1> the len is %u\n", size);
 			memset(pathname, 0, 50);			
-			// kfree(pathname);
+			kfree(pathname);
 			return rc;
 			break;
 		case RD_READDIR:
