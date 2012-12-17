@@ -162,7 +162,7 @@ int main () {
 
   /* Try writing to all double-indirect data blocks */
   retval = kwrite (fd, data3, sizeof(data3));
-  printf("kwrite 2 actually writes = %d, suppose to write = %ld\n", retval, sizeof(data2));
+  printf("kwrite 2 actually writes = %d, suppose to write = %ld\n", retval, sizeof(data3));
   if (retval < 0) {
     fprintf (stderr, "kwrite: File write STAGE3 error! status: %d\n", 
 	     retval);
@@ -180,7 +180,7 @@ int main () {
 
   /* ****TEST 3: Seek and Read file test**** */
   retval = klseek (fd, 0);	/* Go back to the beginning of your file */
-
+    printf("%p", retval);
   if (retval < 0) {
     fprintf (stderr, "klseek: File seek error! status: %d\n", 
 	     retval);
