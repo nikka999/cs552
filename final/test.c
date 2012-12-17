@@ -28,16 +28,16 @@ int main () {
 	printf("rc: %d\n", rc);
 	int fd = rd_open(path2);
 	printf("fd: %d\n", fd);
-	char *content = "hello im just testing this out...";
-	rc = rd_write(fd, content, strlen(content)+1);
-	printf("rc: %d\n", rc);
-	char *words;
-	words = (char *)malloc(strlen(content)+1);
-	rc = rd_read(fd, words, strlen(content)+1);
-	printf("this was read: %s\n", words);
+	// char *content = "hello im just testing this out...";
+	// rc = rd_write(fd, content, strlen(content)+1);
+	// printf("rc: %d\n", rc);
+	// char *words;
+	// words = (char *)malloc(strlen(content)+1);
+	// rc = rd_read(fd, words, strlen(content)+1);
+	// printf("this was read: %s\n", words);
 	rc = rd_close(fd);
 	printf("rc: %d\n", rc);
-	free(words);
+	// free(words);
 	
 
 
