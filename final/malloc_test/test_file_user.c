@@ -64,7 +64,8 @@ int main () {
 
 
 #ifdef TEST1
-
+	kmkdir("/home");
+	kcreat("/home/file");
   /* ****TEST 1: MAXIMUM file creation**** */
 
   /* Assumes the pre-existence of a root directory file "/"

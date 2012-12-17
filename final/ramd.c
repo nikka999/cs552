@@ -74,7 +74,7 @@ int get_inode_index (int node, char *pathname) {
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
-			if(!strcmp(bd->ent[k].filename, pathname))
+			if(!strncmp(bd->ent[k].filename, pathname, 14))
 				return bd->ent[k].inode_number;
 		}
 	}
@@ -91,7 +91,7 @@ int get_inode_index (int node, char *pathname) {
 				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-					if(!strcmp(bd->ent[j].filename, pathname)) {
+					if(!strncmp(bd->ent[j].filename, pathname, 14)) {
 						return bd->ent[j].inode_number;
 					}
 				} 				
@@ -104,7 +104,7 @@ int get_inode_index (int node, char *pathname) {
 					else
 						continue;
 					for (z = 0; z < 16; z++) {
-						if(!strcmp(bd->ent[z].filename, pathname)) {
+						if(!strncmp(bd->ent[z].filename, pathname, 14)) {
 							return bd->ent[z].inode_number;
 						}
 					}
