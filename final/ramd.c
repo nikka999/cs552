@@ -1259,7 +1259,6 @@ static void __exit exit_routine(void) {
 	printk("<1> Exiting RAMDISK Module\n");
 	// Free ramdisk
 	vfree(rd);
-	kfree(pathname);
 	// Remove /proc entry
 	remove_proc_entry("ramdisk", NULL);
 	return;
