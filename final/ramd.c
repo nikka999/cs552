@@ -599,7 +599,7 @@ int kcreat(char *pathname) {
     }
     // Check pathname and get last entry.
 	last = (char *)kmalloc(14, GFP_KERNEL);
-    if (check_pathname(pathname, last, &super_inode) == -1) {
+    if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed. 
         return -1;
     }    
