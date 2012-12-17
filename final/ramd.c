@@ -70,7 +70,7 @@ int get_inode_index (int node, char *pathname) {
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0){
-			bd = inode->blocks[i]->dir;
+			//bd = inode->blocks[i]->dir;
 			for (k = 0; k < 16; k++) {
 				if(!strncmp(inode->blocks[i]->dir.ent[k].filename, pathname, 14))
 					return inode->blocks[i]->dir.ent[k].inode_number;
@@ -86,7 +86,7 @@ int get_inode_index (int node, char *pathname) {
 		// else
 		// 	continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {
-			blk = inode->blocks[i]->dir.blocks[k];
+			blk = inode->blocks[i]->ptr.blocks[k];
 			if (blk != 0){
 				// bd = blk->dir;
 				// printk("<1> 2 bd pointer: %p\n", bd);
