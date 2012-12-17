@@ -62,37 +62,37 @@ int is_block_empty(union Block *blk) {
 int get_inode_index (int node, char *pathname) {
 	int i,k,j,z;
 	struct Inode *inode;
-	struct Block_dir bd;
-	struct Block_ptr bp;
+	struct Block_dir *bd;
+	struct Block_ptr *bp;
 	union Block *blk, *dblk;
 	inode = &(GET_INODE_BY_INDEX(node));
 	if (!strcmp(inode->type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0)
-			bd = inode->blocks[i]->dir;
+			bd = &(inode->blocks[i]->dir);
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
-			if(!strcmp(bd.ent[k].filename, pathname))
-				return bd.ent[k].inode_number;
+			if(!strcmp(bd->ent[k].filename, pathname))
+				return bd->ent[k].inode_number;
 		}
 	}
 	for (i = 8; i < 10; i++) {
 		if (inode->blocks[i] != 0)
-			bp = inode->blocks[i]->ptr;
+			bp = &(inode->blocks[i]->ptr);
 		else
 			continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {
-			blk = bp.blocks[k];
+			blk = bp->blocks[k];
 			if (blk != 0)
-				bd = blk->dir;
+				bd = &(blk->dir);
 			else
 				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-					if(!strcmp(bd.ent[j].filename, pathname)) {
-						return bd.ent[j].inode_number;
+					if(!strcmp(bd->ent[j].filename, pathname)) {
+						return bd->ent[j].inode_number;
 					}
 				} 				
 			}
@@ -100,12 +100,12 @@ int get_inode_index (int node, char *pathname) {
 				for (j = 0; j < BLOCK_BYTES/4; j++) {
 					dblk = blk->ptr.blocks[j];
 					if (dblk != 0)
-						bd = dblk->dir;
+						bd = &(dblk->dir);
 					else
 						continue;
 					for (z = 0; z < 16; z++) {
-						if(!strcmp(bd.ent[z].filename, pathname)) {
-							return bd.ent[z].inode_number;
+						if(!strcmp(bd->ent[z].filename, pathname)) {
+							return bd->ent[z].inode_number;
 						}
 					}
 				}
@@ -118,14 +118,14 @@ int get_inode_index (int node, char *pathname) {
 
 //checks if pathname exists, -1 if error, 0 if does not exists, >0 if does exists
 int check_pathname (char *pathname, char* last, short* super_inode) {
-    char name[14];
+    char *name;
 	char *slash;
 	unsigned int size;
 	// struct Inode inode;
 	int node_index = 0;
 	int current_index;
 	// unsigned int dir = 0;
-	memset(name, 0, 14);
+	name = (char *)kzalloc(14, GFP_KERNEL);
 	printk("<1> in check_pathname...");
     //validate that user inputed root
 	if (pathname[0] != '/')
@@ -162,6 +162,7 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 	*super_inode = node_index;
 	printk("<1>still in check_pathname...");
 	//if returns something other than -1, it means that this pathname already exits
+	kfree(name);
 	if (current_index > 0)
 		return current_index;
 	return 0;
@@ -171,19 +172,19 @@ int check_pathname (char *pathname, char* last, short* super_inode) {
 int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 	int i,k,j,z; 
 	struct Inode *inode;
-	struct Block_dir bd;
-	struct Block_ptr bp;
+	struct Block_dir *bd;
+	struct Block_ptr *bp;
 	union Block *blk, *dblk;
 	inode = &(GET_INODE_BY_INDEX(cnode));
 	if (!strcmp(inode->type, "reg"))
 		return -1;
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0)
-			bd = inode->blocks[i]->dir;
+			bd = &(inode->blocks[i]->dir);
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
-			if(bd.ent[k].inode_number == tnode)
+			if(bd->ent[k].inode_number == tnode)
 				return 1;
 			else {
 				array[*size] = bd.ent[k].inode_number;
@@ -198,18 +199,18 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 	}
 	for (i = 8; i < 10; i++) {
 		if (inode->blocks[i] != 0)
-			bp = inode->blocks[i]->ptr;
+			bp = &(inode->blocks[i]->ptr);
 		else
 			continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {
-			blk = bp.blocks[k];
+			blk = bp->blocks[k];
 			if (blk != 0)
-				bd = blk->dir;
+				bd = &(blk->dir);
 			else
 				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
-					if(bd.ent[j].inode_number == tnode) {
+					if(bd->ent[j].inode_number == tnode) {
 						return 1;
 					}
 					else {
@@ -226,11 +227,11 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 				for (j = 0; j < BLOCK_BYTES/4; j++) {
 					dblk = blk->ptr.blocks[j];
 					if (dblk != 0)
-						bd = dblk->dir;
+						bd = &(dblk->dir);
 					else
 						continue;					
 					for (z = 0; z < 16; z++) {
-						if(bd.ent[z].inode_number == tnode) {
+						if(bd->ent[z].inode_number == tnode) {
 							return 1;
 						}
 						else {
