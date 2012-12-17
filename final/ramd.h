@@ -9,7 +9,7 @@ int klseek(int fd, int offset);
 int kunlink(char *pathname);
 int kreaddir(int fd, char *address);
 
-#define BLOCK_SIZE 256
+#define BLOCK_BYTES 256
 #define RAMDISK_SIZE (2*1024*1024)
 
 /** Superblock*/
