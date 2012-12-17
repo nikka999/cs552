@@ -913,8 +913,10 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
 }
 int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
-    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE, GFP_KERNEL);
-    int size = build_inode_structure(inode, ist);
+	int size;
+	unsigned char *ist;
+ 	ist = (unsigned char *)kmalloc(MAX_FILE_SIZE, GFP_KERNEL);
+    size = build_inode_structure(inode, ist);
     if ((write_pos + num_bytes) > MAX_FILE_SIZE) {
         // Not enough bytes for us to write, write what is possible.
         memcpy(ist + write_pos, temp, (MAX_FILE_SIZE - write_pos));
