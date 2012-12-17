@@ -69,9 +69,10 @@ int get_inode_index (int node, char *pathname) {
 	if (!memcmp(inode->type, reg, 3))
 		return -1;
 	for (i = 0; i < 8; i++) {
-		if (inode->blocks[i] != 0)
+		if (inode->blocks[i] != 0){
 			bd = &(inode->blocks[i]->dir);
 			printk("<1> bd pointer: %p\n", bd);
+		}
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
@@ -81,16 +82,18 @@ int get_inode_index (int node, char *pathname) {
 		}
 	}
 	for (i = 8; i < 10; i++) {
-		if (inode->blocks[i] != 0)
+		if (inode->blocks[i] != 0) {
 			bp = &(inode->blocks[i]->ptr);
-			printk("<1> bp pointer: %p\n", bd);			
+			printk("<1> bp pointer: %p\n", bd);
+		}
 		else
 			continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {
 			blk = bp->blocks[k];
-			if (blk != 0)
+			if (blk != 0){
 				bd = &(blk->dir);
-				printk("<1> 2 bd pointer: %p\n", bd);				
+				printk("<1> 2 bd pointer: %p\n", bd);
+			}
 			else
 				continue;
 			if (i == 8) {
