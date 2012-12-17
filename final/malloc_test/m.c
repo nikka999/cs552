@@ -903,7 +903,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
 			WRITE_TO_LOCATION(inode, i, (ist + position), size);
             position += size;				
 			//check to see whether or not this is last block
-			if (size < 256)
+			if ((new_size - position) < 256)
 				return 1;
 		}
 		else {
@@ -921,7 +921,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
 					WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), size);
                     position += size;
 					//check to see whether or not this is last block
-					if (size < 256)
+					if ((new_size - position) < 256)
 						return 1;
 				}
 				else if(i == 9) {
@@ -935,7 +935,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
                         WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), size);
                         position += size;
 						//check to see whether or not this is last block
-						if (size < 256)
+						if ((new_size - position) < 256)
 							return 1;				
 					}					
 				}
