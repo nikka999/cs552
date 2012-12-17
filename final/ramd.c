@@ -71,9 +71,11 @@ int get_inode_index (int node, char *pathname) {
 	for (i = 0; i < 8; i++) {
 		if (inode->blocks[i] != 0)
 			bd = &(inode->blocks[i]->dir);
+			printk("<1> bd pointer: %p\n", bd);
 		else
 			continue;
 		for (k = 0; k < 16; k++) {
+			printk("<1> 1 about to compare pointers: %p and %p", bd->ent[k].filename, pathname);
 			if(!strncmp(bd->ent[k].filename, pathname, 14))
 				return bd->ent[k].inode_number;
 		}
@@ -81,16 +83,19 @@ int get_inode_index (int node, char *pathname) {
 	for (i = 8; i < 10; i++) {
 		if (inode->blocks[i] != 0)
 			bp = &(inode->blocks[i]->ptr);
+			printk("<1> bp pointer: %p\n", bd);			
 		else
 			continue;
 		for (k = 0; k < BLOCK_BYTES/4; k++) {
 			blk = bp->blocks[k];
 			if (blk != 0)
 				bd = &(blk->dir);
+				printk("<1> 2 bd pointer: %p\n", bd);				
 			else
 				continue;
 			if (i == 8) {
 				for (j = 0; j < 16; j++) {
+					printk("<1> 2 about to compare pointers: %p and %p", bd->ent[k].filename, pathname);					
 					if(!strncmp(bd->ent[j].filename, pathname, 14)) {
 						return bd->ent[j].inode_number;
 					}
