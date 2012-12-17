@@ -1259,7 +1259,7 @@ static void __exit exit_routine(void) {
 	printk("<1> Exiting RAMDISK Module\n");
 	// Free ramdisk
 	vfree(rd);
-
+	kfree(pathname);
 	// Remove /proc entry
 	remove_proc_entry("ramdisk", NULL);
 	return;
@@ -1273,10 +1273,10 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	int fd, rc;
 	// int size;
 	unsigned long size;
-	char pathname[50];
-	memset(pathname, 0, 50);
+	char *pathname;
 	char *addr;
 	struct Params p;
+	pathname = (char *)kmalloc(50, GFP_KERNEL);
 	/* 
 	 * Switch according to the ioctl called 
 	 */
