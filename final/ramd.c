@@ -726,12 +726,12 @@ int kopen(char *pathname) {
         newfd = (struct fd *)kmalloc(sizeof(struct fd), GFP_KERNEL);
         newfd->inode = &rd->ib[inode];
         fd_table[inode] = newfd;
+		kfree(newfd);
     } else {
         // Other file is accessing it.
         return -1;
     }
 	kfree(last);
-	kfree(newfd);
     // We return the inode index of the file, which also is the fd_table index.
     // Since there is no special requirement on the traditional linux incrementing fd (i.e. first fd is 1, second is 2...etc), we just use what is easiest. 
     return inode;
@@ -1153,7 +1153,6 @@ int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     }
     // Nothing read, return EOF
 	kfree(ist);
-	kfree(d);
     return 0;
 }
 
@@ -1210,7 +1209,6 @@ int kreaddir(int fd, char *address) {
         return 1;
     } else {
         // Not a Dir file. 
-		kfree(temp_add);
         return -1;
     }
 }
