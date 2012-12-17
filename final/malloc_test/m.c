@@ -898,7 +898,6 @@ int kread(int fd, char *address, int num_bytes) {
         free(temp);
         // My test end
 
-        
         // COPY TO USER SPACE
         // return number of bytes actually read
         return ret;
@@ -1039,12 +1038,19 @@ int kwrite(int fd, char *address, int num_bytes) {
         int pos = 0;
         int ret = 0;
         while (pos < num_bytes) {
-            memcpy(temp, address + pos, second_redir);
+            int bytes = 0;
+            if ((num_bytes - pos) <= second_redir) {
+                bytes = num_bytes - pos;
+            } else {
+                bytes = second_redir;
+            }
+            
+            memcpy(temp, address + pos, bytes);
             printf("test\n");
-            int ret2 = write_file(fd, fd_table[fd]->write_pos, (second_redir), temp);
-            pos += second_redir;
+            int ret2 = write_file(fd, fd_table[fd]->write_pos, bytes, temp);
+            pos += bytes;
             ret += ret2;
-            memset(temp, 0, second_redir);
+            memset(temp, 0, bytes);
             if (ret2 == -1) {
                 return -1;
             }
