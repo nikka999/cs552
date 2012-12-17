@@ -187,9 +187,9 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 			if(bd->ent[k].inode_number == tnode)
 				return 1;
 			else {
-				array[*size] = bd.ent[k].inode_number;
+				array[*size] = bd->ent[k].inode_number;
 				*size+=1;
-				if (recursive_inode_search(array, size, bd.ent[k].inode_number, tnode) == 1)
+				if (recursive_inode_search(array, size, bd->ent[k].inode_number, tnode) == 1)
 					return 1;
 				*size-=1;
 				array[*size] = 0;
@@ -214,9 +214,9 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 						return 1;
 					}
 					else {
-						array[*size] = bd.ent[j].inode_number;
+						array[*size] = bd->ent[j].inode_number;
 						*size+=1;
-						if (recursive_inode_search(array, size, bd.ent[j].inode_number, tnode) == 1)
+						if (recursive_inode_search(array, size, bd->ent[j].inode_number, tnode) == 1)
 							return 1;
 						*size-=1;
 						array[*size] = 0;
@@ -235,9 +235,9 @@ int recursive_inode_search(short *array, int *size, short cnode, short tnode) {
 							return 1;
 						}
 						else {
-							array[*size] = bd.ent[j].inode_number;
+							array[*size] = bd->ent[j].inode_number;
 							*size+=1;
-							if (recursive_inode_search(array, size, bd.ent[z].inode_number, tnode) == 1)
+							if (recursive_inode_search(array, size, bd->ent[z].inode_number, tnode) == 1)
 								return 1;
 							*size-=1;
 							array[*size] = 0;
@@ -624,9 +624,10 @@ int kcreat(char *pathname) {
 int kmkdir(char *pathname) {
 	char *last;
 	short super_inode;    
+	int fi;
     // kernel mkdir. Create a DIR
 	printk("<1> in kmkdir, with pathname: %s\n", pathname);
-    int fi = find_free_inode();
+    fi = find_free_inode();
     if (fi == -1) {
         return -1;
     }
