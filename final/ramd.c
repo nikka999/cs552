@@ -1350,11 +1350,11 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		case RD_WRITE:
 			copy_from_user(&p, (struct Params *)arg, sizeof(struct Params));
 			printk("<1> got p.fd:%d, p.addr: %p, p.byte_size:%d\n", p.fd, p.addr, p.num_bytes);
-			addr = (char *)kmalloc(p.num_bytes, GFP_KERNEL);
-			strncpy(addr, p.addr, p.num_bytes);
-			rc = kwrite(p.fd, addr, p.num_bytes);
-			copy_to_user(p.addr, addr, p.num_bytes);
-			kfree(addr);
+			// addr = (char *)kmalloc(p.num_bytes, GFP_KERNEL);
+			// strncpy(addr, p.addr, p.num_bytes);
+			rc = kwrite(p.fd, p.addr, p.num_bytes);
+			// copy_to_user(p.addr, addr, p.num_bytes);
+			// kfree(addr);
 			return rc;
 			break;
 		case RD_LSEEK:
