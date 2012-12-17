@@ -718,7 +718,9 @@ int build_inode_structure(short inode, unsigned char *ist) {
             if (i >= 0 && i <= 7) {
                 // 1~ 7 is direct block
                 // Since there is a block allocated, we can just copy the entire block.
+                printf("t inode = %d, i = %d\n", inode, i);
                 memcpy((ist + position), GET_INODE_LOCATION_BLOCK(inode, i), 256);
+                printf("tt\n");
                 position += 256;
             } else if (i == 8) {
                 // 8 is single redirection block
@@ -945,7 +947,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
 	//unable to fill all the data
 	return -1;
 }
-
+#define debug
 int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
     unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
@@ -993,7 +995,9 @@ int kwrite(int fd, char *address, int num_bytes) {
         // write num_bytes From ADDRESS location
         // COPY FROM USERSPACE
         unsigned char *temp = (unsigned char *)malloc(sizeof(num_bytes));
+        
         memcpy(temp, address, num_bytes);
+        printf("test\n");
         int ret = write_file(fd, fd_table[fd]->write_pos, num_bytes, temp);
 		free(temp);
         if (ret == -1) {
