@@ -641,6 +641,579 @@ int kmkdir(char *pathname) {
     return 0;
 }
 
+int build_inode_structure(short inode, unsigned char *ist) {
+    /**
+     * This function can be use for kread, kwrite, kreaddir
+     * build the entire inode structure first, then go to offest. 
+     */
+    // Traverse through all possible location
+    int i = 0; // Location blocks
+    int position = 0; // Position can also be used as a counter for size.
+    while(i < 10) {
+        // If there is allocated block?
+        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
+            //printf("i = %d, is empty\n", i);
+            // No allocated block at i, we can return.
+            return position;
+        } else {
+            // Block already allocated. Loop though all blocks and build inode structure
+            if (i >= 0 && i <= 7) {
+                // 1~ 7 is direct block
+                // Since there is a block allocated, we can just copy the entire block.
+                memcpy((ist + position), GET_INODE_LOCATION_BLOCK(inode, i), 256);
+                position += 256;
+            } else if (i == 8) {
+                // 8 is single redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the redirection block, j is PTR_ENTRY
+                    if (GET_INODE_LOCATION_BLOCK_SIN(inode, j) == 0) {
+                        // If it equals 0, then there are NO Dir block allocated.
+                        return position;
+                    } else {
+                        // A dir block is allocated
+                        memcpy((ist + position), GET_INODE_LOCATION_BLOCK_SIN(inode, j), 256);
+                        position += 256;
+                    }
+                }
+            } else if (i == 9) {
+                // 9 is double redirection block
+                int j = 0;
+                for (j; j < (256/4); j++) {
+                    // Loop through the first redirection block, j is PTR_ENT1
+                    if (GET_INODE_LOCATION_BLOCK_DOB_FST(inode, j) == 0) {
+                        // There is no second redirection block.
+                        return position;
+                    } else {
+                        // There is a second redirection block.
+                        int k = 0;
+                        for (k; k < (256/4); k++) {
+                            // Loop through the second redirection block, k is PTR_ENT2
+                            if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
+                                // There is no Directory block
+                                return position;
+                            } else {
+                                // There is a Directory block
+                                memcpy((ist + position), GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k), 256);
+                                position += 256;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i++;
+    }
+    return position;
+}
+
+int kopen(char *pathname) {
+    // Check_pathname and get last entry
+    char *last = (char *)kmalloc(14);
+    short super_inode;
+	int inode;
+    if ((inode = check_pathname(pathname, last, &super_inode)) < 1) {
+        // Pathname failed.
+        return -1;
+    }
+    // 1. Find inode number for file within super_inode
+    // int temp_inode = 0;
+
+    // int inode = temp_inode;
+    // 2. Check if fd_table is active. 
+    if (fd_table[inode] == NULL) {
+        struct fd* newfd;
+        newfd = (struct fd *)kmalloc(sizeof(struct fd));
+        newfd->inode = &rd->ib[inode];
+        fd_table[inode] = newfd;
+    } else {
+        // Other file is accessing it.
+        return -1;
+    }
+	kfree(last);
+	kfree(newfd);
+    // We return the inode index of the file, which also is the fd_table index.
+    // Since there is no special requirement on the traditional linux incrementing fd (i.e. first fd is 1, second is 2...etc), we just use what is easiest. 
+    return inode;
+}
+
+int kclose(int fd) {
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an open file
+        return -1;
+    } else {
+		kfree(fd_table[fd]);
+		fd_table[fd] = NULL;
+    }
+    return 0;
+}
+
+int read_file(short inode, int read_pos, int num_bytes, unsigned char *temp) {
+    // Build the inode structure first.
+    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE);
+    int size = build_inode_structure(inode, ist);
+    if (size == 0) {
+        return 0;
+    }
+    if (read_pos >= (size - 1)) {
+        // Read_pos is greater then possible size
+        return -1;
+    }
+    if ((read_pos + num_bytes) > (size - 1)) {
+        // Not enough bytes for us to read, read what is possible.
+        memcpy(temp, ist + read_pos, (size - read_pos));
+        // Increment fd position
+        fd_table[inode]->read_pos = size;
+		kfree(ist);
+        return (size - read_pos);
+    } else {
+        // Enough byte for us to read.
+        memcpy(temp, ist + read_pos, num_bytes);
+        // Increment fd position
+        fd_table[inode]->read_pos = read_pos + num_bytes;
+		kfree(ist);
+        return num_bytes;
+    }
+    // Error if reach here.
+	kfree(ist);
+    return -1;
+}
+
+int kread(int fd, char *address, int num_bytes) {
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a regular file
+    if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        // Read num_bytes TO ADDRESS location
+        int second_redir = 8*256;
+        unsigned char *temp = (unsigned char *)kmalloc(second_redir);
+        int pos = 0;
+        int ret = 0;
+        while (pos < num_bytes) {
+            int bytes = 0;
+            if ((num_bytes - pos) <= second_redir) {
+                bytes = num_bytes - pos;
+            } else {
+                bytes = second_redir;
+            }
+            
+            int ret2 = read_file(fd, fd_table[fd]->read_pos, bytes, temp);
+            //printf("pos = %d, bytes=%d, num_bytes = %d, ret2= %d\n", pos, bytes, num_bytes, ret2);
+            if (ret2 == -1) {
+                return -1;
+            }
+            if (ret2 == 0) {
+                // no byte read
+                return 0;
+            }
+            //printf("pos = %d, bytes=%d, num_bytes = %d, ret2= %d\n", pos, bytes, num_bytes, ret2);
+            memcpy(address + pos, temp, bytes);
+            //memset(temp, 0, bytes);
+            pos += bytes;
+            ret += ret2;
+            //printf("pos = %d, bytes=%d, num_bytes = %d, ret2= %d\n", pos, bytes, num_bytes, ret2);
+        }
+        kfree(temp);
+        // My test end
+
+        // COPY TO USER SPACE
+        // return number of bytes actually read
+        return ret;
+    } else {
+        // Not a regular file
+        return -1;
+    }
+}
+
+int check_for_last_write(int size, int ptr_count, unsigned char *file, int fb) {
+    if ((size - ptr_count) <=  256) {
+        // To prevent garbage in our partition block.
+        // NOTE: Since we know the inode size (for reading), we can skip this step
+        // but to keep our partition clean, lets do it anyway.
+        unsigned char temp[256];
+        memcpy(temp, &file[ptr_count], (size - ptr_count));
+        WRITE_TO_FILE(fb, temp);
+        return 1;
+    }
+    return -1;
+}
+
+int write_to_fs(short inode, unsigned char *ist, int new_size) {
+	int fb, fb2, fb3;
+	int i, j, k, size, position = 0;
+	for (i = 0; i < 10; i++) {
+		//check to see if current block is allocated already
+		if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {        
+			//current block is not allocated, find free block and assign it to current index
+			fb = find_free_block();
+			ASSIGN_LOCATION(inode, i, fb);
+		}
+		if (i < 8) {
+			//if it is a direct block, then can comense write
+			if ((size = new_size - position) > 256)
+				size = 256;
+			WRITE_TO_LOCATION(inode, i, (ist + position), size);
+            position += size;				
+			//check to see whether or not this is last block
+			if ((new_size - position) < 256)
+				return 1;
+		}
+		else {
+			for (j = 0; j < BLOCK_SIZE/4; j++) {
+				//check to see if first indirection is allocated
+				if (GET_INODE_LOCATION_BLOCK_GENERIC_FST(inode, i, j) == 0) {
+					//if not, find free block and assign
+					fb2 = find_free_block();
+					ASSIGN_LOCATION_GENERIC_RED(inode, i, j, fb2);
+				}
+				if (i == 8) {
+					if ((size = new_size - position) > 256)
+						size = 256;
+					//begin write to 1st indirection block
+					WRITE_TO_LOCATION_SINGLE_RED(inode, j, (ist + position), size);
+                    position += size;
+					//check to see whether or not this is last block
+					if ((new_size - position) < 256)
+						return 1;
+				}
+				else if(i == 9) {
+					for (k = 0; k < BLOCK_SIZE/4; k++) {
+						if (GET_INODE_LOCATION_BLOCK_DOB_SND(inode, j, k) == 0) {
+							fb3 = find_free_block();
+							ASSIGN_LOCATION_DOUBLE_SND_RED(inode, j, k, fb3);
+						}
+						if ((size = new_size - position) > 256)
+							size = 256;
+                        WRITE_TO_LOCATION_DOUBLE_RED(inode, j, k, (ist + position), size);
+                        position += size;
+						//check to see whether or not this is last block
+						if ((new_size - position) < 256)
+							return 1;				
+					}					
+				}
+			}
+		}
+	}
+	//unable to fill all the data
+	return -1;
+}
+int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
+    // Build the inode structure first.
+    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE);
+    int size = build_inode_structure(inode, ist);
+    if ((write_pos + num_bytes) > MAX_FILE_SIZE) {
+        // Not enough bytes for us to write, write what is possible.
+        memcpy(ist + write_pos, temp, (MAX_FILE_SIZE - write_pos));
+        // Actually write back to filesystem
+        write_to_fs(inode, ist, MAX_FILE_SIZE);
+        // Set Inode new size
+		recursive_inode_size_add(inode, MAX_FILE_SIZE);		
+        // SET_INODE_SIZE(inode, MAX_FILE_SIZE);
+        // Increment fd position
+        fd_table[inode]->write_pos = MAX_FILE_SIZE;
+		kfree(ist);
+        return (MAX_FILE_SIZE - write_pos);
+    } else {
+        // Enough byte for us to read.
+        memcpy(ist + write_pos, temp, num_bytes);
+        // Actually write back to filesystem
+        write_to_fs(inode, ist, write_pos + num_bytes);
+        // Set new size for inode and recursively for all parent dirs		
+		recursive_inode_size_add(inode, write_pos + num_bytes);
+        // SET_INODE_SIZE(inode, write_pos + num_bytes);
+        // Increment fd position
+        fd_table[inode]->write_pos = write_pos + num_bytes;
+		kfree(ist);
+        return num_bytes;
+    }
+    // Error if reach here.
+    return -1;
+}
+
+int kwrite(int fd, char *address, int num_bytes) {
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a regular file
+    if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        // write num_bytes From ADDRESS location
+        // COPY FROM USERSPACE
+        int second_redir = 256*8;
+        unsigned char *temp = (unsigned char *)kmalloc(second_redir);
+        int pos = 0;
+        int ret = 0;
+        while (pos < num_bytes) {
+            int bytes = 0;
+            if ((num_bytes - pos) <= second_redir) {
+                bytes = num_bytes - pos;
+            } else {
+                bytes = second_redir;
+            }
+            
+            memcpy(temp, address + pos, bytes);
+            int ret2 = write_file(fd, fd_table[fd]->write_pos, bytes, temp);
+            pos += bytes;
+            ret += ret2;
+            memset(temp, 0, bytes);
+            if (ret2 == -1) {
+                return -1;
+            }
+        }
+        kfree(temp);
+        
+        /// END OF TESTING
+        
+        if (ret == -1) {
+            return -1;
+        }
+        if (ret == 0) {
+            // no byte write
+            return 0;
+        }
+        
+        // return number of bytes actually write
+        return ret;
+    } else {
+        // Not a regular file
+        return -1;
+    }
+}
+
+int klseek(int fd, int offset) {
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a regular file
+    if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
+        // Assuming setting both read and write file position.
+        //printf("offset=%d\n", offset);
+        fd_table[fd]->read_pos = offset;
+        fd_table[fd]->write_pos = offset;
+        // returning the new position
+        return fd_table[fd]->read_pos = offset;
+    } else {
+        // Not a regular file
+        return -1;
+    }
+}
+
+int unlink_file(int inode) {
+    int i = 0;
+	int k,j;
+    while(i < 10) {
+        if (GET_INODE_LOCATION_BLOCK(inode, i) == 0) {
+            // No allocated block at i. Nothing to free
+            return 1;
+        } else {
+            // Allocated block at i.
+            if (i >= 0 && i <= 7) {
+                // Remove File Block
+				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
+				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
+				INCR_FREEBLOCK;
+                
+            } else if (i == 8) {
+				for (k = 0; k < BLOCK_SIZE/4; k++) {
+					if(GET_INODE_LOCATION_BLOCK_SIN(inode, k) == 0)
+						break;
+					memset(GET_INODE_LOCATION_BLOCK_SIN(inode, k)->reg.byte, 0, 256);
+					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_SIN(inode, k)));
+					INCR_FREEBLOCK;
+                    
+				}
+				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
+				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
+				INCR_FREEBLOCK;
+				// Remove All File Blocks
+                // Then Remove Single redirection block
+            } else if (i == 9) {
+				for (k = 0; k < BLOCK_SIZE/4; k++) {
+					if(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k) == 0)
+						break;
+					for (j = 0; j < BLOCK_SIZE/4; j++) {
+						if(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j) == 0)
+							break;
+						memset(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)->reg.byte, 0, 256);
+						SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_SND(inode, k, j)));
+						INCR_FREEBLOCK;
+                    }
+                    
+					memset(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k)->reg.byte, 0, 256);
+					SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK_DOB_FST(inode, k)));
+					INCR_FREEBLOCK;
+                    
+				}
+				memset(GET_INODE_LOCATION_BLOCK(inode, i)->reg.byte, 0, 256);
+				SET_BITMAP_FREE_BLOCK(GET_BLOCK_INDEX_PARTITION(GET_INODE_LOCATION_BLOCK(inode, i)));
+				INCR_FREEBLOCK;
+                // Remove All File Blocks
+                // Then Remove All Second Double redirection blocks
+                // Then Remove First double redirection block
+            }
+        }
+        i++;
+    }
+    return 1;
+}
+
+int kunlink(char *pathname) {
+    if (pathname[0] == '/' && pathname[1] == '\0') {
+        // trying to unlink root
+        return -1;
+    }
+    char *last = (char *)kmalloc(14);
+    short super_inode;
+    int retp = check_pathname(pathname, last, &super_inode);
+    if (retp == 0 || retp == -1) {
+        // does not exist file or error
+        return -1;
+    }
+    if (retp > 0) {
+		if (fd_table[retp] != NULL) {
+	        // fd is already open
+			kfree(last);
+	        return -1;
+	    }
+        // File exist, we can strart to remove
+        // Get inode number
+        int inode = retp;
+        if (memcmp(dir, GET_INODE_TYPE(inode), 3) == 0) {
+            // Check if it is a DIR file
+            if (GET_INODE_SIZE(inode) != 0) {
+                // removing non-empty directory.
+				kfree(last);
+                return -1; 
+            } else {
+                // file size = 0
+                // 1. Remove dir
+                memset(&(rd->ib[inode]), 0, sizeof(struct Inode));			
+				delete_dir_entry(super_inode, last);
+				INCR_FREEINODE;
+                // 2. Go to super_inode and remove inode entry
+				kfree(last);
+                return 0;
+                
+            }
+        }
+        if (memcmp(reg, GET_INODE_TYPE(inode), 3) == 0) {
+            // Check if it is a reg file
+            // 1. Get file size
+			int reg_size = GET_INODE_SIZE(inode);
+            // 2. remove file
+			unlink_file(inode);
+			memset(&(rd->ib[inode]), 0, sizeof(struct Inode));			
+            // 3. Go to super_inode and remove inode entry
+			recursive_pathname_size_decr(pathname, reg_size);
+			INCR_FREEINODE;
+            // 4. Traverse filesystem and minus file_size on all super inodes.
+            PRINT_FREEINODE_COUNT;
+            PRINT_FREEBLOCK_COUNT;
+			kfree(last);
+            return 0;
+        }
+    }
+}
+
+int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
+    // Read 1 dir_entry
+    // Build the inode structure first.
+    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE);
+    int size = build_inode_structure(inode, ist);    
+    if (size == 0) {
+        return 0;
+    }
+    
+    if (read_pos >= (size - 1)) {
+        // Read_pos is greater then possible size
+        return -1;
+    }
+    while ((read_pos + 16) <= size) {
+        // Read an entry
+        struct Dir_entry *d = (struct Dir_entry *)kmalloc(sizeof(struct Dir_entry));
+        memcpy(d, ist + read_pos, 16);
+        if (d->inode_number == 0) {
+            // An empty Dir_entry
+            read_pos += 16;
+        } else {
+            memcpy(temp_add, d, 16);
+            // set the position to the next entry
+            fd_table[inode]->read_pos = (read_pos + 16);
+			kfree(ist);
+			kfree(d);
+            return 1;
+        }
+    }
+    // Nothing read, return EOF
+	kfree(ist);
+	kfree(d);
+    return 0;
+}
+
+int small_itoa(struct Dir_entry *temp_add) {
+    // convert inode number into string.
+    short num = temp_add->inode_number;
+    //printf("num = %d", num);
+    int ten = num/10;
+    int dig = num%10;
+    // 48 = ascii '0'
+    *((unsigned char *)temp_add + 14) = (48 + ten);
+    *((unsigned char *)temp_add + 15) = (48 + dig);
+}
+
+#define USING_ATOI
+// using ATOI only to accomdate test script 4
+int kreaddir(int fd, char *address) {
+    // Again, fd=inode index
+    if (fd_table[fd] == NULL) {
+        // Not an valid fd
+        return -1;
+    }
+    // Check if it is a DIR file
+    if (memcmp(dir, GET_INODE_TYPE(fd), 3) == 0) {
+        // read 1 dir_entry from fd
+        struct Dir_entry *temp_add = (struct Dir_entry *)kmalloc(sizeof(struct Dir_entry));
+        int ret = read_dir_entry(fd, fd_table[fd]->read_pos, temp_add);
+        if (ret == -1) {
+            return -1;
+        }
+        if (ret == 0) {
+            // no dir entry
+			kfree(temp_add);
+            return 0;
+        }
+#ifdef USING_ATOI
+        small_itoa(temp_add);
+#endif
+// #ifdef debug
+//         printf("\nret = %d\n", ret);
+//         printf("%d\n", temp_add->inode_number);
+//         int zz = 0;
+//         for (zz; zz < 16; zz++) {
+//             printf("%d ", *((unsigned char *)temp_add + zz));
+//         }
+//         printf("\n");
+// #endif
+        memcpy(address, temp_add, 16);
+        
+        // Need copy_to_user to finish the copying.
+        
+        // 1 is success
+		kfree(temp_add);
+        return 1;
+    } else {
+        // Not a Dir file. 
+		kfree(temp_add);
+        return -1;
+    }
+}
 
 static int __init init_routine(void) {
 	printk("<1> Loading RAMDISK Module\n");
