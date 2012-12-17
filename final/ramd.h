@@ -1,4 +1,4 @@
-int init_fs();
+int init_fs(void);
 int kcreat(char *pathname);
 int kmkdir(char *pathname);
 int kopen(char *pathname);
