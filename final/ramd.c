@@ -33,7 +33,7 @@ struct Params {
 
 int init_fs() {
     // INIT FILESYSTEM:
-    rd = (struct Ramdisk *)malloc(sizeof(struct Ramdisk));
+    rd = (struct Ramdisk *)vmalloc(sizeof(struct Ramdisk));
     printk("RAMDISK Size=%d\n", (int)sizeof(struct Ramdisk));
     // Setting up root
     SET_INODE_TYPE_DIR(0);
@@ -595,7 +595,7 @@ int kcreat(char *pathname) {
         return -1;
     }
     // Check pathname and get last entry.
-    char *last = (char *)kmalloc(14);
+    char *last = (char *)kmalloc(14, GFP_KERNEL);
     short super_inode;
     if (check_pathname(pathname, last, &super_inode) == -1) {
         // Pathname failed. 
@@ -622,7 +622,7 @@ int kmkdir(char *pathname) {
 
     
     // Check_pathname and get last entry
-    char *last = (char *)kmalloc(14);
+    char *last = (char *)kmalloc(14, GFP_KERNEL);
     short super_inode;
 
     if (check_pathname(pathname, last, &super_inode) != 0) {
@@ -709,7 +709,7 @@ int build_inode_structure(short inode, unsigned char *ist) {
 
 int kopen(char *pathname) {
     // Check_pathname and get last entry
-    char *last = (char *)kmalloc(14);
+    char *last = (char *)kmalloc(14, GFP_KERNEL);
     short super_inode;
 	int inode;
     if ((inode = check_pathname(pathname, last, &super_inode)) < 1) {
@@ -723,7 +723,7 @@ int kopen(char *pathname) {
     // 2. Check if fd_table is active. 
     if (fd_table[inode] == NULL) {
         struct fd* newfd;
-        newfd = (struct fd *)kmalloc(sizeof(struct fd));
+        newfd = (struct fd *)kmalloc(sizeof(struct fd), GFP_KERNEL);
         newfd->inode = &rd->ib[inode];
         fd_table[inode] = newfd;
     } else {
@@ -751,7 +751,7 @@ int kclose(int fd) {
 
 int read_file(short inode, int read_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
-    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE);
+    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE, GFP_KERNEL);
     int size = build_inode_structure(inode, ist);
     if (size == 0) {
         return 0;
@@ -790,7 +790,7 @@ int kread(int fd, char *address, int num_bytes) {
     if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
         // Read num_bytes TO ADDRESS location
         int second_redir = 8*256;
-        unsigned char *temp = (unsigned char *)kmalloc(second_redir);
+        unsigned char *temp = (unsigned char *)kmalloc(second_redir, GFP_KERNEL);
         int pos = 0;
         int ret = 0;
         while (pos < num_bytes) {
@@ -903,7 +903,7 @@ int write_to_fs(short inode, unsigned char *ist, int new_size) {
 }
 int write_file(short inode, int write_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
-    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE);
+    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE, GFP_KERNEL);
     int size = build_inode_structure(inode, ist);
     if ((write_pos + num_bytes) > MAX_FILE_SIZE) {
         // Not enough bytes for us to write, write what is possible.
@@ -945,7 +945,7 @@ int kwrite(int fd, char *address, int num_bytes) {
         // write num_bytes From ADDRESS location
         // COPY FROM USERSPACE
         int second_redir = 256*8;
-        unsigned char *temp = (unsigned char *)kmalloc(second_redir);
+        unsigned char *temp = (unsigned char *)kmalloc(second_redir, GFP_KERNEL);
         int pos = 0;
         int ret = 0;
         while (pos < num_bytes) {
@@ -1069,7 +1069,7 @@ int kunlink(char *pathname) {
         // trying to unlink root
         return -1;
     }
-    char *last = (char *)kmalloc(14);
+    char *last = (char *)kmalloc(14, GFP_KERNEL);
     short super_inode;
     int retp = check_pathname(pathname, last, &super_inode);
     if (retp == 0 || retp == -1) {
@@ -1125,7 +1125,7 @@ int kunlink(char *pathname) {
 int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     // Read 1 dir_entry
     // Build the inode structure first.
-    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE);
+    unsigned char *ist = (unsigned char *)kmalloc(MAX_FILE_SIZE, GFP_KERNEL);
     int size = build_inode_structure(inode, ist);    
     if (size == 0) {
         return 0;
@@ -1137,7 +1137,7 @@ int read_dir_entry(short inode, int read_pos, struct Dir_entry *temp_add) {
     }
     while ((read_pos + 16) <= size) {
         // Read an entry
-        struct Dir_entry *d = (struct Dir_entry *)kmalloc(sizeof(struct Dir_entry));
+        struct Dir_entry *d = (struct Dir_entry *)kmalloc(sizeof(struct Dir_entry), GFP_KERNEL);
         memcpy(d, ist + read_pos, 16);
         if (d->inode_number == 0) {
             // An empty Dir_entry
@@ -1179,7 +1179,7 @@ int kreaddir(int fd, char *address) {
     // Check if it is a DIR file
     if (memcmp(dir, GET_INODE_TYPE(fd), 3) == 0) {
         // read 1 dir_entry from fd
-        struct Dir_entry *temp_add = (struct Dir_entry *)kmalloc(sizeof(struct Dir_entry));
+        struct Dir_entry *temp_add = (struct Dir_entry *)kmalloc(sizeof(struct Dir_entry), GFP_KERNEL);
         int ret = read_dir_entry(fd, fd_table[fd]->read_pos, temp_add);
         if (ret == -1) {
             return -1;
@@ -1228,7 +1228,7 @@ static int __init init_routine(void) {
 	}
 	// Working version
 	proc_entry->proc_fops = &proc_operations;
-
+	init_fs();
 // Trying read write
 //	proc_entry->read_proc = read_proc;
 //	proc_entry->write_proc = write_proc;
@@ -1242,7 +1242,7 @@ static int __init init_routine(void) {
 static void __exit exit_routine(void) {
 	printk("<1> Exiting RAMDISK Module\n");
 	// Free ramdisk
-	vfree(ramdisk);
+	vfree(rd);
 
 	// Remove /proc entry
 	remove_proc_entry("ramdisk", NULL);
@@ -1267,7 +1267,7 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	switch (cmd) {
 		case RD_MALLOC:
 			// vmalloc for 2MB
-			ramdisk = (unsigned char *)vmalloc(2097150);
+		//	ramdisk = (unsigned char *)vmalloc(2097150);
 			printk("<1>I finished vmalloc!\n");
 			break;
 		case RD_CREAT:
