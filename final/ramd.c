@@ -1342,12 +1342,12 @@ static int ramdisk_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		case RD_UNLINK:
 			size = strnlen_user((char *)arg, 50);
-			pathname = (char *)kmalloc(size,GFP_KERNEL);
+			// pathname = (char *)kmalloc(size,GFP_KERNEL);
 			copy_from_user(pathname, (char *)arg, size);
 			rc = kunlink(pathname);
 			printk("<1> kernel got: %s\n",pathname);
 			printk("<1> the len is %lu\n", size);
-			kfree(pathname);
+			// kfree(pathname);
 			return rc;
 			break;
 		case RD_READDIR:
