@@ -591,16 +591,17 @@ int kcreat(char *pathname) {
    	// PRINT_FREEINODE_COUNT;
     // PRINT_FREEBLOCK_COUNT;
     // kernel creat. Create a file
-	char *last;
+	char last[14];
 	short super_inode;    
     int fi = find_free_inode();
     if (fi < 0) {
         return -1;
     }
     // Check pathname and get last entry.
-	last = (char *)kmalloc(14, GFP_KERNEL);
+	// last = (char *)kmalloc(14, GFP_KERNEL);
     if (check_pathname(pathname, last, &super_inode) != 0) {
-        // Pathname failed. 
+        // Pathname failed.
+ 		// kfree(last);
         return -1;
     }    
     // Create file
@@ -610,15 +611,15 @@ int kcreat(char *pathname) {
     SET_INODE_SIZE(fi, 0);
     // 3. Assign new inode to super inode.
     if (insert_inode(super_inode, fi, last) != 1) {
-		kfree(last);
+		// kfree(last);
         return -1;
     }
-	kfree(last);
+	// kfree(last);
     return 0;
 }
 
 int kmkdir(char *pathname) {
-	char *last;
+	char last[14];
 	short super_inode;    
     // kernel mkdir. Create a DIR
     int fi = find_free_inode();
@@ -628,11 +629,11 @@ int kmkdir(char *pathname) {
 
     
     // Check_pathname and get last entry
-    last = (char *)kmalloc(14, GFP_KERNEL);
+    // last = (char *)kmalloc(14, GFP_KERNEL);
 
     if (check_pathname(pathname, last, &super_inode) != 0) {
         // Pathname failed.
-		kfree(last);
+		// kfree(last);
         return -1;
     }    
     // Create directory
@@ -642,10 +643,10 @@ int kmkdir(char *pathname) {
     SET_INODE_SIZE(fi, 0);
     // 3. Assign new inode to super inode.
     if (insert_inode(super_inode, fi, last) != 1) {
-		kfree(last);
+		// kfree(last);
 		return -1;
     }
-	kfree(last);
+	// kfree(last);
     return 0;
 }
 
