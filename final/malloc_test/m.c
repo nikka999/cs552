@@ -815,9 +815,9 @@ int read_file(short inode, int read_pos, int num_bytes, unsigned char *temp) {
     // Build the inode structure first.
     unsigned char *ist = (unsigned char *)malloc(MAX_FILE_SIZE);
     int size = build_inode_structure(inode, ist);
-#ifdef debug
+//#ifdef debug
     printf("size = %d\n", size);
-#endif
+//#endif
     if (size == 0) {
         return 0;
     }
@@ -868,30 +868,32 @@ int kread(int fd, char *address, int num_bytes) {
         
         // TEST ----- NOT WORKING. some bugs here. 
         int second_redir = 8*256;
-        unsigned char *temp = (unsigned char *)malloc(sizeof(second_redir));
+        unsigned char *temp = (unsigned char *)malloc(second_redir);
         int pos = 0;
         int ret = 0;
         while (pos < num_bytes) {
-            
             int bytes = 0;
             if ((num_bytes - pos) <= second_redir) {
-                bytes = (num_bytes - pos);
+                bytes = num_bytes - pos;
             } else {
                 bytes = second_redir;
             }
-            printf("pos = %d, bytes=%d\n", pos, bytes);
+            
             int ret2 = read_file(fd, fd_table[fd]->read_pos, bytes, temp);
-            if (ret == -1) {
+            //printf("pos = %d, bytes=%d, num_bytes = %d, ret2= %d\n", pos, bytes, num_bytes, ret2);
+            if (ret2 == -1) {
                 return -1;
             }
-            if (ret == 0) {
+            if (ret2 == 0) {
                 // no byte read
                 return 0;
             }
+            //printf("pos = %d, bytes=%d, num_bytes = %d, ret2= %d\n", pos, bytes, num_bytes, ret2);
             memcpy(address + pos, temp, bytes);
             //memset(temp, 0, bytes);
             pos += bytes;
             ret += ret2;
+            //printf("pos = %d, bytes=%d, num_bytes = %d, ret2= %d\n", pos, bytes, num_bytes, ret2);
         }
         free(temp);
         // My test end
@@ -1033,7 +1035,7 @@ int kwrite(int fd, char *address, int num_bytes) {
         int ret = write_file(fd, fd_table[fd]->write_pos, num_bytes, temp);
 		free(temp);
         */
-        unsigned char *temp = (unsigned char *)malloc(sizeof(second_redir));
+        unsigned char *temp = (unsigned char *)malloc(second_redir);
         int pos = 0;
         int ret = 0;
         while (pos < num_bytes) {
