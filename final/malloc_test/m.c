@@ -853,16 +853,50 @@ int kread(int fd, char *address, int num_bytes) {
     // Check if it is a regular file
     if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
         // Read num_bytes TO ADDRESS location
+        /*
         unsigned char *temp = (unsigned char *)malloc(sizeof(num_bytes));
         int ret = read_file(fd, fd_table[fd]->read_pos, num_bytes, temp);
         if (ret == -1) {
             return -1;
         }
-        if (ret == 0) {
-            // no byte read
-            return 0;
+         if (ret == 0) {
+         // no byte read
+         return 0;
+         }
+         memcpy(address, temp, ret);
+         */
+        
+        
+        // TEST ----- NOT WORKING. some bugs here. 
+        int second_redir = 8*256;
+        unsigned char *temp = (unsigned char *)malloc(sizeof(second_redir));
+        int pos = 0;
+        int ret = 0;
+        while (pos < num_bytes) {
+            
+            int bytes = 0;
+            if ((num_bytes - pos) <= second_redir) {
+                bytes = (num_bytes - pos);
+            } else {
+                bytes = second_redir;
+            }
+            printf("pos = %d, bytes=%d\n", pos, bytes);
+            int ret2 = read_file(fd, fd_table[fd]->read_pos, bytes, temp);
+            if (ret == -1) {
+                return -1;
+            }
+            if (ret == 0) {
+                // no byte read
+                return 0;
+            }
+            memcpy(address + pos, temp, bytes);
+            //memset(temp, 0, bytes);
+            pos += bytes;
+            ret += ret2;
         }
-        memcpy(address, temp, ret);
+        free(temp);
+        // My test end
+
         
         // COPY TO USER SPACE
         // return number of bytes actually read
@@ -1044,9 +1078,11 @@ int klseek(int fd, int offset) {
     // Check if it is a regular file
     if (memcmp(reg, GET_INODE_TYPE(fd), 3) == 0) {
         // Assuming setting both read and write file position.
+        //printf("offset=%d\n", offset);
         fd_table[fd]->read_pos = offset;
         fd_table[fd]->write_pos = offset;
         // returning the new position
+        return fd_table[fd]->read_pos = offset;
     } else {
         // Not a regular file
         return -1;

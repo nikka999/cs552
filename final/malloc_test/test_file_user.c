@@ -24,8 +24,8 @@
 
 //#define TEST1
 #define TEST2
-//#define TEST3
-// #define TEST4
+#define TEST3
+//#define TEST4
 //#define TEST5
 
 // #define's to control whether single indirect or
@@ -169,6 +169,8 @@ int main () {
 
     exit (1);
   }
+    
+    printf("PASSED TEST2\n");
 
 #endif // TEST_DOUBLE_INDIRECT
 
@@ -180,7 +182,6 @@ int main () {
 
   /* ****TEST 3: Seek and Read file test**** */
   retval = klseek (fd, 0);	/* Go back to the beginning of your file */
-    printf("%p", retval);
   if (retval < 0) {
     fprintf (stderr, "klseek: File seek error! status: %d\n", 
 	     retval);
@@ -199,7 +200,9 @@ int main () {
   }
   /* Should be all 1s here... */
   printf ("Data at addr: %s\n", addr);
-
+    
+    printf("PASSED TEST3-Direct Block read\n");
+    
 #ifdef TEST_SINGLE_INDIRECT
 
   /* Try reading from all single-indirect data blocks */
@@ -213,7 +216,8 @@ int main () {
   }
   /* Should be all 2s here... */
   printf ("Data at addr: %s\n", addr);
-
+    
+    printf("PASSED TEST3-1 Redirect Block read\n");
 #ifdef TEST_DOUBLE_INDIRECT
 
   /* Try reading from all double-indirect data blocks */
@@ -227,7 +231,7 @@ int main () {
   }
   /* Should be all 3s here... */
   printf ("Data at addr: %s\n", addr);
-
+printf("PASSED TEST3-2 Redirect Block read\n");
 #endif // TEST_DOUBLE_INDIRECT
 
 #endif // TEST_SINGLE_INDIRECT
